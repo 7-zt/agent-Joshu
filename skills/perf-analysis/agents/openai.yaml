@@ -1,0 +1,6 @@
+interface:
+  display_name: "Perf Analysis"
+  short_description: "推理性能分析：基线→瓶颈→验证→对比，证据优先"
+  default_prompt: "使用 perf-analysis 对当前性能问题做证据优先分析：先判定基线状态，再定位瓶颈，结论必须有测量证据。"
+policy:
+  allow_implicit_invocation: false

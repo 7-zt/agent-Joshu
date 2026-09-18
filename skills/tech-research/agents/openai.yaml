@@ -1,0 +1,6 @@
+interface:
+  display_name: "Tech Research"
+  short_description: "证据优先调研：来源分级、论断分类、快照审计"
+  default_prompt: "使用 tech-research 对指定主题做结构化调研：来源分级、保存来源快照、论断逐条分类、未解决问题显式记录。"
+policy:
+  allow_implicit_invocation: false
