@@ -72,7 +72,6 @@
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
 ├── omp/                 setup.md（新设备 3 步引导）、prompts/（可复用模式索引 + 独立 prompt）
 ├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
-├── tools/               check-workflow.ps1 结构/链接/模板/ADR/绝对路径自检
 ├── .trellis/            Trellis 流程（任务与日志本地化，不进 git）
 └── .omp/                Trellis 的 OMP 组件（trellis 生成，勿手改）
 ```
@@ -133,7 +132,6 @@
 - 知识条目（`inference-ops` 的 `references/knowledge/`）按需生成（一场景一条目），引擎大版本发布后标 `needs-review` 复核。
 - 报告解决后从 `reports/` 删除或移入对应任务材料。
 - OMP 升级后重验 `skills.customDirectories`（`omp config get ... --json`），不猜键名。
-- 修改任何 SKILL 或文档后运行 `tools/check-workflow.ps1`（覆盖 frontmatter、链接、自包含边界、知识条目元数据、ADR 与模板结构、绝对路径扫描），退出码 0 才算通过。
 - 新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
 - `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目按 `template/README.md` 手动比对更新。
 

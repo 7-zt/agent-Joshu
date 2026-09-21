@@ -1,3 +1,7 @@
+# Normalize all text files to LF in the repository; checkout follows each
+# platform's native convention. Keeps Linux checkouts clean.
+* text=auto
+
 # Trellis: append-only developer journals should merge cleanly across
 # parallel sessions/worktrees — each session only appends a new block, so
 # there is nothing to actually conflict on.
@@ -7,6 +11,3 @@
 # picking either side (task state lives in task.json, not index.md). See
 # .trellis/spec/cli/backend/directory-structure.md for details.
 .trellis/workspace/*/journal-*.md merge=union
-
-# Windows PowerShell 5.1 scripts keep UTF-8 BOM and CRLF in the repository.
-*.ps1 -text whitespace=cr-at-eol

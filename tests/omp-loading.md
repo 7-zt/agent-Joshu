@@ -65,7 +65,6 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 2. SKILL.md 的 frontmatter 格式是否正确
 3. `agents/openai.yaml` 是否存在且格式正确
 4. OMP 版本是否支持自定义 Skill 目录
-5. 运行 `tools/check-workflow.ps1` 检查文件结构
 
 ## 注意
 
