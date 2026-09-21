@@ -20,9 +20,16 @@ Managed by Trellis. Edits outside this block are preserved; edits inside may be 
 
 <!-- TRELLIS:END -->
 
-# workflow 工作区规则
+# agent-Joshu 主包工作区规则
 
-本目录是用户的个人 AI 工作流工作区（推理优化 + 部署排障方向）。Agent 在本目录及其子目录工作时遵循以下规则。
+本仓库是个人 AI 工作流主包（推理优化 + 部署排障方向）：全局能力层 + 项目上下文模板。Agent 在本目录及其子目录工作时遵循以下规则。
+
+## 架构：主包与项目侧
+
+- 主包（本仓库）：Skill 能力层（OMP `skills.customDirectories` 全局加载，配置见 `omp/setup.md`）+ 跨项目决策与经验（`.agents/adr/`）+ 项目上下文模板（`template/`）。换设备按 `omp/setup.md` 三步引导。
+- 项目侧：每个项目根目录一个可见的 `agent-joshu/`（复制 `template/agent-joshu/` + `trellis init`，安装步骤见 `template/README.md`），与 src、docs 同级。项目规则与决策随项目 git，任务过程留本地。
+- 记录策略：决策进 ADR（主包 `.agents/adr/`、项目 `agent-joshu/adr/`，同构）；任务过程只留本地，不进 git。
+- 回流：项目经验可泛化到多个项目时，回流主包 ADR 或对应文档，不在单个项目私藏。
 
 ## 语言约定
 
@@ -58,7 +65,7 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 - Skill 内部文件引用、书面路径引用、执行前置规则不得依赖组件目录外文件（`../` 跨 Skill 引用、兄弟 Skill 名引用、「调用 XX Skill」「见 YY/references/ZZ」类指令都禁止）。
 - 必要的最小规则复制进组件内，不复制整份文档。例：reporting 参考自带环境字段采集示例，不依赖其他参考文档。
 - 组合用法（设计→验证→执行循环，Skill 间协作）只在工作区级 README 或 omp/prompts 说明，不写入组件正文。
-- herdr 启动子代理时，工作目录必须是 `C:/Users/admin/Desktop/yuting/program/agent-Joshu`（本仓库根），确保加载本 AGENTS.md。
+- herdr 启动子代理时，工作目录必须是本仓库根（以当前设备上的克隆位置为准，勿写死绝对路径），确保加载本 AGENTS.md。
 
 ## 证据纪律（所有任务的底线）
 
@@ -75,10 +82,11 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 
 ## 存储约定
 
-- 问题报告：`reports/YYYY-MM-DD-NN-theme.md`（事实-only，见 inference-ops 的 reporting 参考）。
+- 长期决定：`.agents/adr/`（生命周期见其 README；单用户由用户当次明确确认）。
+- 问题报告：`reports/YYYY-MM-DD-NN-theme.md`（事实-only，见 inference-ops 的 reporting 参考）。主包自身维护的问题放这里；项目内的问题归项目 `agent-joshu/reports/`。
 - 调研报告与来源快照：调研任务自建目录，快照存 `sources/` 子目录。
 - 可复用 prompt：`omp/prompts/`（写入需用户确认）。
-- 构建过程材料 `_pipeline/` 归档于仓库外 `C:/Users/admin/Desktop/workspace/workflow/_pipeline/`（只读，不修改、不迁移）。
+- 任务过程（Trellis 任务与日志、任务材料目录）属过程状态，留在本地，不进 git。
 
 ## 多代理协作（herdr 可用时）
 
@@ -90,7 +98,7 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 ## tk 集成（可选）
 
 - 探测 `command -v tk` 成功才使用；通过 tk 工具管理任务，不手工创建 `.tk` 结构。
-- 未安装时用本目录的 reports/ 与任务材料目录；不伪造 tk 数据。
+- 未安装时用 `.trellis` 本地任务或任务材料目录；不伪造 tk 数据。
 
 ## 报告与文档
 
@@ -108,4 +116,5 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
   - `sources/`：来源快照
   - `results/`：产出与验证
 - **短任务不创建**：单会话内完成的任务不建目录。
+- **不进 git**：任务目录与日志属过程状态，留本地。
 - **tk 可用时优先**：如果检测到 `tk` 命令可用，优先用 tk 工具管理任务；否则用上述普通目录。

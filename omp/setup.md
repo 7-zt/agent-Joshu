@@ -1,34 +1,46 @@
-# OMP 落地：安装与版本探测
+# 新设备引导手册
 
-在 OMP 中启用本工作区的 Skill。以下命令已于 2026-09-17 在本机 OMP 18.2.3 上验证；OMP 升级后配置键可能变化，执行前用 `omp config get <key> --json` 重新确认，不猜替代键。
+把主包安装到一台新设备，共 3 步。命令均在仓库根目录执行；本手册不含任何设备绝对路径。
 
-## 1. 挂载 Skill 目录
-
-OMP 通过 `skills.customDirectories`（数组）加载额外 Skill 目录：
+## 第 1 步：克隆主包
 
 ```bash
-omp config set skills.customDirectories --json '["C:/Users/admin/Desktop/yuting/program/agent-Joshu/skills"]'
+git clone <仓库地址> <任意本地目录>
+cd <本地目录>
 ```
 
-- 本仓库 2026-09-21 自 `C:/Users/admin/Desktop/workspace/workflow` 迁移而来；若配置仍指旧路径，按上面命令更新。
+## 第 2 步：配置 OMP 加载 Skill
 
-- 若该键已有其他目录，先 `omp config get skills.customDirectories --json` 读当前值，合并后再写，不要覆盖丢失既有条目。
-- 写入后重启 OMP 会话生效。
+在仓库根目录执行，命令自动取当前路径，勿手工改写为绝对路径：
 
-## 2. 验证加载
+```bash
+# bash
+omp config set skills.customDirectories --json "[\"$(pwd)/skills\"]"
+```
 
-新会话中应能用 `/skill:inference-ops`（推理运维：部署排障 + 性能优化）触发，也应看到 2026-09-21 移植的六个 Skill：grill-me、architect、python-engineering、code-quality、deep-research（源自 ruokee-agent-kit）与 unslop（源自本地 codex，触发信号：撰写/改写面向用户的文本）。均可 `/skill:<name>` 显式触发；除 grill-me 与 inference-ops 仅用户显式触发外，其余五个允许模型隐式调用，对话匹配触发信号时自动加载（见 AGENTS.md「Skill 路由（自动触发）」）。
+```powershell
+# PowerShell
+omp config set skills.customDirectories --json "[\"$pwd/skills\"]"
+```
 
-## 3. 工作区规则
+- 若该键已有其他目录：先 `omp config get skills.customDirectories --json` 读当前值，合并后再写，不覆盖丢失既有条目。
+- 配置键于 OMP 18.2.3 验证；OMP 升级后先 `omp config get <key> --json` 重新确认键名，不猜替代键。
+- 写入后重启 OMP 生效。
 
-`AGENTS.md`（仓库根）是本工作区的 Agent 规则。在本仓库（或其子目录）中启动 OMP 会话时会被加载；在其他目录工作时，把需要遵循的规则带上或显式引用该文件路径。
+## 第 3 步：跑触发矩阵验证
 
-## 4. 可选集成的探测前置
+新 OMP 会话中按 [tests/omp-loading.md](../tests/omp-loading.md) 的逐 Skill 触发矩阵执行（7 个 Skill 正向 + 2 个负向），全部通过即安装完成。
+
+## 工作区规则
+
+- 在本仓库内工作时：根 [AGENTS.md](../AGENTS.md) 自动生效（主包自身维护规则）。
+- 在其他项目内工作：用 [template/](../template/README.md) 给项目安装 `agent-joshu/` 上下文，规则随模板进入项目根 AGENTS.md。
+
+## 可选集成探测
 
 | 集成 | 探测 | 未安装时 |
 | --- | --- | --- |
-| tk 任务管理 | `command -v tk`（本机 2026-09-17 未安装） | 不使用；不手工伪造 `.tk` 结构；用本目录 `reports/` 与任务材料目录替代 |
+| tk 任务管理 | `command -v tk` | 不使用；不手工伪造 `.tk` 结构；用 Trellis 本地任务或任务材料目录替代 |
 | herdr 多代理 | `test "$HERDR_ENV" = 1` 且 `herdr --help` 可用 | 单代理工作流照常可用 |
-| 冒烟/隔离测试 | 按需搭建一次性容器环境 | 非必需 |
 
 任何集成在命令探测失败时：停止并报告，不猜替代命令。

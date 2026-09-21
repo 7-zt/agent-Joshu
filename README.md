@@ -1,34 +1,56 @@
-# 个人 AI 工作流（推理优化 × 部署排障）
+# agent-Joshu：个人 AI 工作流主包
 
-为「大模型推理优化 + 部署问题排查」方向定制的防幻觉 AI 工作区。核心理念：**证据优先、事实与推断分离、版本敏感断言必须可审计**。
+推理优化 × 部署排障方向的个人 Agent Kit。**一份克隆装好能力，一套模板进入项目。** 核心理念：证据优先、事实与推断分离、版本敏感断言必须可审计、跨设备零路径耦合。
+
+## 架构
+
+- **主包（本仓库）**：装在每台设备上的全局能力层——Skill 库（OMP 加载）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）。只沉淀跨项目通用的工作流、决策与经验。
+- **项目侧**：每个项目根目录一个可见的 `agent-joshu/`（与 src、docs 同级）＝ 复制模板 + `trellis init`。项目规则与决策随项目 git 走；任务过程留本地（决策进 `agent-joshu/adr/`）。
+
+```text
+每台设备                                 每个项目
+├── agent-Joshu 主包（git clone）         ├── src/  docs/  README …
+│   ├── skills/ ──OMP 全局加载──┐         └── agent-joshu/（复制模板而来）
+│   ├── .agents/adr/            │                ├── adr/（决策，进项目 git）
+│   └── template/ ──────────────┘                └── VERSION（模板版本标记）
+└── omp/setup.md：新设备 3 步引导            .trellis/ 任务过程（本地）
+```
 
 ## 目录
 
 ```
-workflow/
 ├── README.md            本文件
-├── AGENTS.md            工作区 Agent 规则（证据纪律、授权分级、存储约定）
-├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期）
-├── skills/              Skill 库（OMP 加载，见 omp/setup.md）
-│   ├── inference-ops/       推理运维：部署排障 × 性能优化（用户触发，3 模式 + 10 篇方法论文档 + 知识库协议）
-│   ├── grill-me/            需求盘问：把不完整想法/计划盘成可执行规格（用户触发）
-│   ├── architect/           架构：系统分析、设计、评审、技术选型（自动触发）
-│   ├── python-engineering/  Python 工程实践：结构/依赖/类型/测试/工具链（自动触发）
-│   ├── code-quality/        代码质量：原则、模式、重构、测试设计（自动触发）
-│   ├── deep-research/       深度调研：来源采集、交叉验证、论断边界（自动触发）
-│   └── unslop/               去除文本 AI 痕迹、换回人话（自动触发）
-├── reports/             问题报告存储（YYYY-MM-DD-NN-theme.md）
-├── omp/                 OMP 落地：setup.md（安装+版本探测）、prompts/（可复用模式索引 + 独立 prompt）
-├── tests/               回归场景卡（scenarios.md）与 OMP 加载自检步骤（omp-loading.md）
-└── tools/               check-workflow.ps1 结构/链接/自包含自动检查
+├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
+├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
+├── skills/              Skill 库（OMP 全局加载，见 omp/setup.md；6 个移植 vendored + inference-ops 原创）
+├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
+├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
+├── omp/                 setup.md（新设备 3 步引导）、prompts/（可复用模式索引 + 独立 prompt）
+├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
+├── tools/               check-workflow.ps1 结构/链接/模板/ADR/绝对路径自检
+├── .trellis/            Trellis 流程（任务与日志本地化，不进 git）
+└── .omp/                Trellis 的 OMP 组件（trellis 生成，勿手改）
 ```
 
 ## 快速开始
 
-1. 按 [omp/setup.md](./omp/setup.md) 挂载 Skill 目录（配置键 `skills.customDirectories`，已在 OMP 18.2.3 验证）。
-2. 重启 OMP，用 `/skill:inference-ops` 触发。
-3. 在本目录工作时 [AGENTS.md](./AGENTS.md) 的规则自动生效；其中「Skill 路由（自动触发）」节定义了其余五个 Skill 的对话/Trellis 自动触发信号。
-4. 五个移植 Skill 允许模型隐式调用：对话匹配触发信号时自动加载，也可用 `/skill:<name>` 显式触发。
+**新设备（3 步）**：见 [omp/setup.md](./omp/setup.md) —— 克隆 → 配置 OMP（命令自动取当前路径）→ 跑触发矩阵。
+
+**新项目（3 步）**：见 [template/README.md](./template/README.md) —— 复制 `agent-joshu/` → `trellis init` 并并入规则 → 触发矩阵 + git 状态检查。
+
+## Skill 库
+
+| Skill | 触发 | 说明 |
+| --- | --- | --- |
+| inference-ops | 用户显式 | 推理运维：部署排障 × 性能优化（3 模式 + 10 篇方法论文档 + 知识库协议） |
+| grill-me | 用户显式 | 需求盘问：把不完整想法/计划盘成可执行规格 |
+| architect | 自动 | 架构：系统分析、设计、评审、技术选型 |
+| python-engineering | 自动 | Python 工程实践：结构/依赖/类型/测试/工具链 |
+| code-quality | 自动 | 代码质量：原则、模式、重构、测试设计 |
+| deep-research | 自动 | 深度调研：来源采集、交叉验证、论断边界 |
+| unslop | 自动 | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」） |
+
+后六个自 ruokee-agent-kit（五个）与本地 codex（unslop）移植，英文正文保留以便与上游 diff 同步（见对应 ADR）。
 
 ## 防幻觉机制一览
 
@@ -66,9 +88,9 @@ workflow/
 - 知识条目（`inference-ops` 的 `references/knowledge/`）按需生成（一场景一条目），引擎大版本发布后标 `needs-review` 复核。
 - 报告解决后从 `reports/` 删除或移入对应任务材料。
 - OMP 升级后重验 `skills.customDirectories`（`omp config get ... --json`），不猜键名。
-- 修改任何 SKILL 或文档后运行 `tools/check-workflow.ps1`（覆盖 frontmatter、链接、自包含边界、知识条目元数据），退出码 0 才算通过。
+- 修改任何 SKILL 或文档后运行 `tools/check-workflow.ps1`（覆盖 frontmatter、链接、自包含边界、知识条目元数据、ADR 与模板结构、绝对路径扫描），退出码 0 才算通过。
 - 新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
-新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
+- `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目按 `template/README.md` 手动比对更新。
 
 ## 来源与致谢
 
