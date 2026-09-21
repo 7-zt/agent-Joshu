@@ -27,7 +27,7 @@ Managed by Trellis. Edits outside this block are preserved; edits inside may be 
 ## 语言约定
 
 Skill frontmatter 标识与文件名用英文；正文用中文；首次出现的领域术语给中英对照。
-例外：自 ruokee-agent-kit 移植的 Skill（grill-me、python-engineering、architect、code-quality、deep-research）保留英文正文，便于与上游同步（见 DECISIONS.md 2026-09-21）。
+例外：自 ruokee-agent-kit 移植的 Skill（grill-me、python-engineering、architect、code-quality、deep-research）保留英文正文，便于与上游同步（见 .agents/adr/decision/2026-09-21-port-five-skills-english-body.md）。
 同日自本地 codex 移植的 unslop 同规则保留英文正文。
 
 ## Skill 路由（自动触发）

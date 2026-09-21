@@ -8,7 +8,7 @@
 workflow/
 ├── README.md            本文件
 ├── AGENTS.md            工作区 Agent 规则（证据纪律、授权分级、存储约定）
-├── DECISIONS.md         设计决定记录（背景/决定/替代项/后果/重审条件）
+├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期）
 ├── skills/              Skill 库（OMP 加载，见 omp/setup.md）
 │   ├── inference-ops/       推理运维：部署排障 × 性能优化（用户触发，3 模式 + 10 篇方法论文档 + 知识库协议）
 │   ├── grill-me/            需求盘问：把不完整想法/计划盘成可执行规格（用户触发）
@@ -67,7 +67,8 @@ workflow/
 - 报告解决后从 `reports/` 删除或移入对应任务材料。
 - OMP 升级后重验 `skills.customDirectories`（`omp config get ... --json`），不猜键名。
 - 修改任何 SKILL 或文档后运行 `tools/check-workflow.ps1`（覆盖 frontmatter、链接、自包含边界、知识条目元数据），退出码 0 才算通过。
-- 新的长期边界决定记入 `DECISIONS.md`；场景回归用 `tests/scenarios.md`。
+- 新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
+新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
 
 ## 来源与致谢
 
