@@ -29,8 +29,9 @@ max_journal_lines: 2000
 # staged changes manually before each commit.
 #
 # Accepts: true / false / yes / no / 1 / 0 / on / off (case-insensitive).
-#
+
 # session_auto_commit: true
+session_auto_commit: false
 
 #-------------------------------------------------------------------------------
 # Task Lifecycle Hooks

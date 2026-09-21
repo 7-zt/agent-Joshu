@@ -30,3 +30,7 @@
 # Python cache
 **/__pycache__/
 **/*.pyc
+
+# 记录策略（2026-09-21）：任务过程与开发日志本地化，决策记录入 .agents/adr
+tasks/
+workspace/

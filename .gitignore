@@ -1,0 +1,8 @@
+# Python
+__pycache__/
+*.pyc
+
+# 临时与备份文件
+*.tmp
+*.new
+.backup-*
