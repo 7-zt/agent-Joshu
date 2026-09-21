@@ -10,7 +10,7 @@
 
 ```text
 命令：nvidia-smi
-环境：user@host:/home/user（容器内/宿主机标注）
+环境：user@host:/home/<user>（容器内/宿主机标注）
 退出码：0
 输出：Driver 525.105.17, CUDA 12.0, 1x A100-80GB
 时间：2026-09-17 14:30:25

@@ -61,7 +61,9 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 
 ## 组件自包含（硬规则）
 
-- 每个 Skill 目录必须自包含：SKILL.md、workflow、references、glossary、agents/openai.yaml（用户触发型必需）。
+- 每个 Skill 必须有 `SKILL.md`，并且单独复制后仍可使用。
+- `workflow/`、`references/` 与 `glossary.md` 按内容需要创建，不为满足目录形式添加空文件。Skill 引用这些内容时，目标必须位于当前 Skill 目录内并真实存在。
+- `agents/openai.yaml` 在 Skill 需要 OpenAI 展示信息或触发策略时创建；用户显式触发型 Skill 必须提供该文件。文件存在时必须通过 YAML 解析。
 - Skill 内部文件引用、书面路径引用、执行前置规则不得依赖组件目录外文件（`../` 跨 Skill 引用、兄弟 Skill 名引用、「调用 XX Skill」「见 YY/references/ZZ」类指令都禁止）。
 - 必要的最小规则复制进组件内，不复制整份文档。例：reporting 参考自带环境字段采集示例，不依赖其他参考文档。
 - 组合用法（设计→验证→执行循环，Skill 间协作）只在工作区级 README 或 omp/prompts 说明，不写入组件正文。

@@ -23,17 +23,75 @@ function Write-Check {
     }
 }
 
-function Test-YamlParseable {
-    param([string]$Path)
-    try {
-        $content = Get-Content $Path -Raw -Encoding UTF8
-        if ($content -match '(?m)^[a-zA-Z_-]+:\s*.+$') {
-            return $true
+function Find-YamlParser {
+    $convertFromYaml = Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue
+    if ($convertFromYaml) {
+        return @{
+            Kind = "PowerShell"
+            Command = $convertFromYaml
         }
+    }
+
+    foreach ($commandName in @("python3", "python")) {
+        $python = Get-Command $commandName -ErrorAction SilentlyContinue
+        if (-not $python) { continue }
+
+        & $python.Source -c "import yaml" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            return @{
+                Kind = "Python"
+                Command = $python.Source
+            }
+        }
+    }
+
+    $ruby = Get-Command ruby -ErrorAction SilentlyContinue
+    if ($ruby) {
+        & $ruby.Source -e "require 'psych'" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            return @{
+                Kind = "Ruby"
+                Command = $ruby.Source
+            }
+        }
+    }
+
+    return $null
+}
+
+function Test-YamlParseable {
+    param(
+        [string]$Path,
+        [hashtable]$Parser
+    )
+
+    if (-not $Parser) {
         return $false
+    }
+
+    try {
+        switch ($Parser.Kind) {
+            "PowerShell" {
+                Get-Content $Path -Raw -Encoding UTF8 |
+                    ConvertFrom-Yaml -ErrorAction Stop |
+                    Out-Null
+                return $true
+            }
+            "Python" {
+                $code = "import pathlib, sys, yaml; yaml.safe_load(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8'))"
+                & $Parser.Command -c $code $Path 2>$null
+                return $LASTEXITCODE -eq 0
+            }
+            "Ruby" {
+                & $Parser.Command -e "require 'psych'; Psych.parse_file(ARGV[0])" $Path 2>$null
+                return $LASTEXITCODE -eq 0
+            }
+        }
     } catch {
         return $false
     }
+
+    return $false
 }
 
 function Extract-FrontmatterFromMarkdown {
@@ -130,10 +188,16 @@ Write-Host "`n=== Workflow Check ===`n" -ForegroundColor Cyan
 Write-Host "1. Checking Skill structure..." -ForegroundColor Cyan
 $skillsDir = Join-Path $WorkflowRoot "skills"
 $skills = Get-ChildItem $skillsDir -Directory
+$yamlParser = Find-YamlParser
+
+if (-not $yamlParser) {
+    Write-Check "No YAML parser available; install powershell-yaml, PyYAML, or Ruby Psych" "FAIL"
+}
 
 foreach ($skill in $skills) {
     $skillName = $skill.Name
     $skillMd = Join-Path $skill.FullName "SKILL.md"
+    $skillFailureCount = $script:FailureCount
 
     if (-not (Test-Path $skillMd)) {
         Write-Check "Skill '$skillName' missing SKILL.md" "FAIL"
@@ -155,20 +219,19 @@ foreach ($skill in $skills) {
         Write-Check "Skill '$skillName' frontmatter missing 'description'" "FAIL"
     }
 
-    # Check user-triggered Skills
+    # User-triggered Skills require OpenAI metadata. Parse every metadata file
+    # that exists so automatic-trigger configurations receive the same check.
     $isManualTrigger = $frontmatter -match 'disable-model-invocation:\s*true'
-    if ($isManualTrigger) {
-        $agentYaml = Join-Path $skill.FullName "agents/openai.yaml"
-        if (-not (Test-Path $agentYaml)) {
-            Write-Check "Skill '$skillName' is manual-trigger but missing agents/openai.yaml" "FAIL"
-        } else {
-            if (-not (Test-YamlParseable $agentYaml)) {
-                Write-Check "Skill '$skillName' agents/openai.yaml format error" "FAIL"
-            }
+    $agentYaml = Join-Path $skill.FullName "agents/openai.yaml"
+    if ($isManualTrigger -and -not (Test-Path $agentYaml)) {
+        Write-Check "Skill '$skillName' is manual-trigger but missing agents/openai.yaml" "FAIL"
+    } elseif (Test-Path $agentYaml) {
+        if (-not (Test-YamlParseable $agentYaml $yamlParser)) {
+            Write-Check "Skill '$skillName' agents/openai.yaml is not valid YAML" "FAIL"
         }
     }
 
-    if ($script:FailureCount -eq 0) {
+    if ($script:FailureCount -eq $skillFailureCount) {
         Write-Check "Skill '$skillName' structure complete" "PASS"
     }
 }
@@ -353,7 +416,9 @@ foreach ($dir in @(".agents", "template", "tests", "tools", "omp", "reports", "s
     }
 }
 $scanFiles = $scanFiles | Sort-Object FullName -Unique
-$devicePathPattern = '(?i)[A-Za-z]:[/\\]Users[/\\]'
+$windowsUserPathPattern = '[A-Za-z]:[/\\]Users[/\\]'
+$linuxHomePathPattern = [regex]::Escape("/home") + '/[a-z_][a-z0-9_-]*/'
+$devicePathPattern = "(?i)(?:$windowsUserPathPattern|$linuxHomePathPattern)"
 $foundDevicePath = $false
 foreach ($f in $scanFiles) {
     $content = Get-Content $f.FullName -Raw -Encoding UTF8

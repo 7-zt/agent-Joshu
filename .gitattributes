@@ -7,3 +7,6 @@
 # picking either side (task state lives in task.json, not index.md). See
 # .trellis/spec/cli/backend/directory-structure.md for details.
 .trellis/workspace/*/journal-*.md merge=union
+
+# Windows PowerShell 5.1 scripts keep UTF-8 BOM and CRLF in the repository.
+*.ps1 -text whitespace=cr-at-eol
