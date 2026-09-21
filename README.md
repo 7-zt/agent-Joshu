@@ -1,6 +1,6 @@
 # 个人 AI 工作流（推理优化 × 部署排障）
 
-为「大模型推理优化 + 部署问题排查」方向定制的防幻觉 AI 工作区。核心理念：**证据优先、事实与推断分离、版本敏感断言必须可审计**。能力模式取自 ruokee-agent-kit（信号路由、停止规则、事实-only 报告、来源快照），经 claude 设计、codex 独立验证（7 项必须修正已全部落实）；后经第二轮闭环补强：codex 差异清单 → claude 落地 P0-P5 → omp 终检。构建过程材料（04 验证、05 差异清单、06 落地等）归档于仓库外 `C:/Users/admin/Desktop/workspace/workflow/_pipeline/`，本仓库不含该目录。
+为「大模型推理优化 + 部署问题排查」方向定制的防幻觉 AI 工作区。核心理念：**证据优先、事实与推断分离、版本敏感断言必须可审计**。
 
 ## 目录
 
@@ -64,4 +64,4 @@ workflow/
 
 ## 来源与致谢
 
-能力模式源自对 `C:/Users/admin/Desktop/study/工作/ruokee-agent-kit`（MIT）的通读，过程材料完整保留在仓库外 `C:/Users/admin/Desktop/workspace/workflow/_pipeline/`。
+能力模式源自 `ruokee-agent-kit`（MIT）
