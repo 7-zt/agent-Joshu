@@ -6,3 +6,6 @@ __pycache__/
 *.tmp
 *.new
 .backup-*
+
+# 评审过程记录（决策已入 .agents/adr，过程材料留本地）
+/grill.md

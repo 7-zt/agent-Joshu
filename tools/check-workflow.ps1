@@ -1,4 +1,4 @@
-# workflow check script
+﻿# workflow check script
 # Check: Skill structure, frontmatter, YAML parseability, Markdown links, self-contained boundaries, knowledge entry metadata
 
 param(
@@ -216,6 +216,7 @@ if ($script:FailureCount -eq 0) {
     Write-Check "All Skills satisfy self-contained constraint" "PASS"
 }
 
+# Check: Skill structure, frontmatter, YAML parseability, Markdown links, self-contained boundaries, knowledge entry metadata, ADR structure, template structure, absolute path decoupling
 # 4. Check knowledge entry metadata
 Write-Host "`n4. Checking knowledge entry metadata..." -ForegroundColor Cyan
 $knowledgeDir = Join-Path $skillsDir "inference-ops/references/knowledge"
@@ -249,6 +250,121 @@ if (Test-Path $knowledgeDir) {
     }
 } else {
     Write-Check "inference-ops/references/knowledge directory not found" "WARN"
+}
+
+# 5. Check ADR structure
+Write-Host "`n5. Checking ADR structure..." -ForegroundColor Cyan
+$adrRoot = Join-Path $WorkflowRoot ".agents/adr"
+$adrStructureOk = $true
+foreach ($dir in @("proposal", "decision", "archived", "rejected")) {
+    if (-not (Test-Path (Join-Path $adrRoot $dir))) {
+        Write-Check "ADR lifecycle directory missing: .agents/adr/$dir" "FAIL"
+        $adrStructureOk = $false
+    }
+}
+foreach ($file in @("README.md", "glossary.md")) {
+    if (-not (Test-Path (Join-Path $adrRoot $file))) {
+        Write-Check "ADR root missing file: .agents/adr/$file" "FAIL"
+        $adrStructureOk = $false
+    }
+}
+if ($adrStructureOk) {
+    $adrDocs = Get-ChildItem $adrRoot -Recurse -Filter "*.md" | Where-Object {
+        $_.Name -ne "README.md" -and $_.Name -ne "glossary.md"
+    }
+    foreach ($doc in $adrDocs) {
+        $relativePath = $doc.FullName.Substring($WorkflowRoot.Length + 1)
+        if ($doc.Name -notmatch '^\d{4}-\d{2}-\d{2}-[a-z0-9-]+\.md$') {
+            Write-Check "$relativePath filename must be yyyy-mm-dd-english-slug.md" "FAIL"
+            continue
+        }
+        if ($doc.Name.Length -gt 60) {
+            Write-Check "$relativePath filename exceeds 60 characters" "FAIL"
+        }
+        $content = Get-Content $doc.FullName -Raw -Encoding UTF8
+        if ($doc.FullName -match '[\\/]proposal[\\/]') {
+            foreach ($section in @('## 背景', '## 提议', '## 验收标准')) {
+                if ($content -notmatch [regex]::Escape($section)) {
+                    Write-Check "$relativePath missing section: $section" "FAIL"
+                }
+            }
+        } elseif ($doc.FullName -match '[\\/]rejected[\\/]') {
+            if ($content -notmatch [regex]::Escape('## 拒绝原因')) {
+                Write-Check "$relativePath missing section: ## 拒绝原因" "FAIL"
+            }
+        } else {
+            foreach ($section in @('## 背景', '## 决定', '## 后果', '## 重审条件')) {
+                if ($content -notmatch [regex]::Escape($section)) {
+                    Write-Check "$relativePath missing section: $section" "FAIL"
+                }
+            }
+            if ($doc.FullName -match '[\\/]archived[\\/]' -and $content -notmatch [regex]::Escape('归档：')) {
+                Write-Check "$relativePath archived doc missing 归档 date" "FAIL"
+            }
+        }
+    }
+    if ($script:FailureCount -eq 0) {
+        Write-Check "ADR structure and formats valid" "PASS"
+    }
+}
+
+# 6. Check template structure
+Write-Host "`n6. Checking template structure..." -ForegroundColor Cyan
+$templateRoot = Join-Path $WorkflowRoot "template"
+if (-not (Test-Path $templateRoot)) {
+    Write-Check "template/ directory not found" "FAIL"
+} else {
+    foreach ($file in @(
+        "README.md", "agents-rules.md", "gitignore.additions",
+        "agent-joshu/README.md", "agent-joshu/VERSION",
+        "agent-joshu/adr/README.md", "agent-joshu/adr/glossary.md"
+    )) {
+        if (-not (Test-Path (Join-Path $templateRoot $file))) {
+            Write-Check "template/ missing file: $file" "FAIL"
+        }
+    }
+    foreach ($dir in @("proposal", "decision", "archived", "rejected")) {
+        $keep = Join-Path $templateRoot "agent-joshu/adr/$dir/.gitkeep"
+        if (-not (Test-Path $keep)) {
+            Write-Check "template/agent-joshu/adr/$dir/.gitkeep missing" "FAIL"
+        }
+    }
+    $versionFile = Join-Path $templateRoot "agent-joshu/VERSION"
+    if (Test-Path $versionFile) {
+        $version = (Get-Content $versionFile -Raw -Encoding UTF8).Trim()
+        if ($version -notmatch '^\d{4}-\d{2}-\d{2}') {
+            Write-Check "template VERSION must be yyyy-mm-dd format, got: $version" "FAIL"
+        }
+    }
+    if ($script:FailureCount -eq 0) {
+        Write-Check "template structure valid" "PASS"
+    }
+}
+
+# 7. Check absolute path decoupling (no device-specific paths in owned files)
+Write-Host "`n7. Checking absolute path decoupling..." -ForegroundColor Cyan
+$scanFiles = @(Get-ChildItem $WorkflowRoot -File -Filter "*.md" | Where-Object { $_.Name -ne "grill.md" })
+foreach ($dir in @(".agents", "template", "tests", "tools", "omp", "reports", "skills")) {
+    $dirPath = Join-Path $WorkflowRoot $dir
+    if (Test-Path $dirPath) {
+        $scanFiles += Get-ChildItem $dirPath -Recurse -File | Where-Object {
+            $_.Extension -in ".md", ".ps1", ".yaml", ".yml", ".py", ".additions" -or $_.Name -eq "VERSION"
+        }
+    }
+}
+$scanFiles = $scanFiles | Sort-Object FullName -Unique
+$devicePathPattern = '(?i)[A-Za-z]:[/\\]Users[/\\]'
+$foundDevicePath = $false
+foreach ($f in $scanFiles) {
+    $content = Get-Content $f.FullName -Raw -Encoding UTF8
+    if ($content -match $devicePathPattern) {
+        $relativePath = $f.FullName.Substring($WorkflowRoot.Length + 1)
+        Write-Check "$relativePath contains device-specific absolute path" "FAIL"
+        $foundDevicePath = $true
+    }
+}
+if (-not $foundDevicePath -and $script:FailureCount -eq 0) {
+    Write-Check "No device-specific absolute paths in owned files" "PASS"
 }
 
 # Summary

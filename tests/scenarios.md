@@ -127,3 +127,33 @@ Agent 提出：「建议重建容器（L2），是否执行？」
 - 这些场景不需要 GPU 或真实环境
 - 测试的是判断边界，不是功能实现
 - 可用于 Skill 修改后的回归测试
+
+## 安装与引导场景
+
+### 场景 9：新设备三步引导
+
+**输入**：
+```
+在一台新设备上按 omp/setup.md 执行：克隆主包 → 配置 OMP（命令自动取当前路径）→ 跑 tests/omp-loading.md 触发矩阵
+```
+
+**预期行为**：
+- ✓ 手册步骤 ≤3 步，无任何设备绝对路径需要手工替换
+- ✓ 触发矩阵：7 个 Skill 正向全过（5 自动 + 2 显式）
+- ✓ 负向：inference-ops 与 grill-me 不隐式触发
+- ✗ 不应出现「路径不存在」「键不存在」类错误（OMP 升级导致键变化时，按手册先探测再执行）
+
+### 场景 10：新项目模板安装
+
+**输入**：
+```
+在一个新项目根按 template/README.md 执行：复制 agent-joshu/ → trellis init 并并入 agents-rules.md 与 gitignore.additions → 跑触发矩阵 + git status 检查
+```
+
+**预期行为**：
+- ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION）
+- ✓ git status 只见 agent-joshu/、AGENTS.md、.gitignore 与 Trellis 生成物
+- ✓ .trellis/tasks/、.trellis/workspace/ 被忽略（过程本地化）
+- ✓ 在项目目录重跑触发矩阵全过
+- ✗ 不应出现嵌套 git 仓库（agent-joshu/ 内无 .git）
+- ✗ 模板更新时不应覆盖项目自有的 adr 决定文件

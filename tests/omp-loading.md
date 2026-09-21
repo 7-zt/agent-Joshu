@@ -1,87 +1,74 @@
-# OMP 加载验证
+# OMP 逐 Skill 触发矩阵
 
-用户自验步骤，确认 workflow Skill 在 OMP 中正确加载。
+用户自验步骤：确认主包 Skill 在 OMP 中正确加载与触发。**新设备安装第 3 步（omp/setup.md）与新项目安装第 3 步（template/README.md）都以本矩阵收尾。**
 
 ## 前提条件
 
 - OMP 已安装（测试版本：18.2.3）
-- 已在 OMP 配置中添加 skills 目录（见 omp/setup.md）
+- 已按 [omp/setup.md](../omp/setup.md) 配置 `skills.customDirectories`（指向本仓库 `skills/`）
+- 已重启 OMP 使配置生效
 
-## 验证步骤
+## 第 1 步：Skill 被发现
 
-### 1. 重启 OMP
+在主包仓库目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 7 个：
 
-重启 OMP 应用，确保配置生效。
+inference-ops、grill-me、architect、python-engineering、code-quality、deep-research、unslop
 
-### 2. 验证 Skill 被发现
+**未显示时**：检查 `skills.customDirectories` 路径（应为设备上克隆位置）；查看 OMP 日志加载错误。
 
-在 OMP 中输入 `/skills` 或查看 Skills 列表，应看到：
+## 第 2 步：正向触发矩阵（每个 Skill 都试一遍）
 
-- ✓ inference-ops
-- ✓ grill-me
-- ✓ architect
-- ✓ python-engineering
-- ✓ code-quality
-- ✓ deep-research
-- ✓ unslop
+| # | Skill | 触发方式 | 测试输入 | 预期 |
+| --- | --- | --- | --- | --- |
+| 1 | inference-ops | 显式 | `/skill:inference-ops` | 进入模式选择/引导 |
+| 2 | grill-me | 显式 | `/skill:grill-me` | 进入盘问式需求梳理 |
+| 3 | architect | 自动 | 「帮我做这个服务的架构评审和技术选型」 | 自动加载 architect 后作答 |
+| 4 | python-engineering | 自动 | 「评估这段 Python 代码的工程实践：<贴代码>」 | 自动加载 python-engineering |
+| 5 | code-quality | 自动 | 「这段代码有什么质量问题，该怎么重构？」 | 自动加载 code-quality |
+| 6 | deep-research | 自动 | 「深度调研 X，需要来源交叉验证」 | 自动加载 deep-research |
+| 7 | unslop | 自动 | 「帮我改写这段报告，去掉 AI 腔」 | 自动加载 unslop |
 
-（后六个 2026-09-21 移植：前五个源自 ruokee-agent-kit，unslop 源自本地 codex。除 grill-me 仅用户显式触发外，均允许模型隐式调用）
+**自动触发未生效时**：检查对应 SKILL.md frontmatter 无残留 `disable-model-invocation: true`；`agents/openai.yaml` 的 `allow_implicit_invocation: true`。
 
-**如果未显示**：
-- 检查 OMP 配置中的 `skills.customDirectories` 路径是否正确
-- 检查路径是否为绝对路径
-- 查看 OMP 日志是否有加载错误
+## 第 3 步：负向检查（不得隐式触发）
 
-### 3. 验证 Skill 可调用
+| Skill | 测试输入 | 预期 |
+| --- | --- | --- |
+| inference-ops | 普通对话提出推理排障话题（不用 `/skill:`） | 不自动进入 inference-ops 流程 |
+| grill-me | 「我有个模糊的想法…」（不用 `/skill:grill-me`） | 不自动进入盘问式交互 |
 
-```
-/skill:inference-ops
-```
-预期：进入 inference-ops Skill，收到模式选择或引导信息
+**负向失败时**：检查这两个 Skill 的 `disable-model-invocation: true` 是否仍在。
 
-**如果无法调用**：
-- 检查 `agents/openai.yaml` 文件是否存在
-- 检查 YAML 格式是否正确
-- 检查 `disable-model-invocation: true` 是否设置
+## 第 4 步：Skill 内部链接与自包含
 
-### 3b. 验证自动触发（六个移植 Skill）
+- Skill 会话中引用内部文档（如 benchmark-protocol）应正确加载，不报文件未找到。
+- 将 `skills/inference-ops/` 单独复制到另一位置加入 OMP 配置，应仍能加载使用（组件自包含）。
 
-在本仓库目录开新会话，提出匹配触发信号的问题（如「帮我评估这段 Python 代码的工程实践」），
-应看到模型自动加载对应 Skill（python-engineering），无需 `/skill:` 显式调用。
-未自动加载时检查 SKILL.md frontmatter 是否残留 `disable-model-invocation: true`，
-以及 `agents/openai.yaml` 的 `allow_implicit_invocation` 是否为 `true`。
-unslop（自本地 codex 移植）同样自动触发，信号为撰写/改写面向用户的文本。
+## 新项目附加检查（模板安装后执行）
 
-### 4. 验证 Skill 内部链接
-
-在 Skill 会话中，如果 Skill 引用了内部文档（如 benchmark-protocol），
-应能正确加载，不应报告文件未找到。
-
-### 5. 验证组件自包含
-
-尝试将 `skills/inference-ops/` 目录单独复制到另一位置，
-添加到 OMP 配置，应仍能正常加载和使用。
+在项目根执行 `git status`，应只见 `agent-joshu/`、`AGENTS.md`、`.gitignore` 与 Trellis 生成物；`.trellis/tasks/`、`.trellis/workspace/` 被忽略（过程本地化生效）。然后在项目目录重跑第 1–3 步。
 
 ## 结果记录
 
-| 项目 | 状态 | 备注 |
-| --- | --- | --- |
-| Skill 列表显示 | ☐ 通过 ☐ 失败 | |
-| inference-ops 可调用 | ☐ 通过 ☐ 失败 | |
-| 内部链接正常 | ☐ 通过 ☐ 失败 | |
-| Skill 可独立使用 | ☐ 通过 ☐ 失败 | |
+| 项目 | 状态 |
+| --- | --- |
+| 7 个 Skill 列表显示 | ☐ 通过 ☐ 失败 |
+| 正向矩阵 1–7 全过 | ☐ 通过 ☐ 失败 |
+| 负向检查（2 项） | ☐ 通过 ☐ 失败 |
+| 内部链接正常 | ☐ 通过 ☐ 失败 |
+| Skill 可独立使用 | ☐ 通过 ☐ 失败 |
+| 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用 |
 
 ## 故障排查
 
-如果加载失败，检查：
-1. 路径配置是否正确（绝对路径）
+1. `skills.customDirectories` 路径是否为设备克隆位置
 2. SKILL.md 的 frontmatter 格式是否正确
-3. agents/openai.yaml 是否存在且格式正确
-4. OMP 版本是否支持自定义 Skills 目录
+3. `agents/openai.yaml` 是否存在且格式正确
+4. OMP 版本是否支持自定义 Skill 目录
 5. 运行 `tools/check-workflow.ps1` 检查文件结构
 
 ## 注意
 
 - 本验证不需要真实执行 GPU 任务
 - 重点验证加载与触发机制，不验证 Skill 功能完整性
-- Skill 功能完整性由 tests/scenarios.md 的场景卡验证
+- Skill 功能完整性由 [tests/scenarios.md](./scenarios.md) 的场景卡验证
