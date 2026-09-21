@@ -1,6 +1,0 @@
-interface:
-  display_name: "Issue Report"
-  short_description: "事实-only 问题报告，分析与方案留给后续任务"
-  default_prompt: "使用 issue-report 把当前问题记录为事实-only 报告：现状、预期、复现、环境、已尝试；不写定位与方案。"
-policy:
-  allow_implicit_invocation: false

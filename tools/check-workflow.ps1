@@ -91,20 +91,21 @@ function Test-CrossComponentReference {
     $hasInvalidReference = $false
     $issues = @()
 
-    # Check ../ references pointing to other Skills
-    if ($content -match '\]\(\.\./[^/)]+/') {
-        $matches = [regex]::Matches($content, '\]\((\.\./[^)]+)\)')
-        foreach ($match in $matches) {
-            $path = $match.Groups[1].Value
-            if ($path -notmatch "^\.\./\.\./") {
-                $issues += "Cross-Skill file reference: $path"
-                $hasInvalidReference = $true
-            }
+    # Check ../ references resolving outside the Skill directory
+    $skillRoot = (Join-Path $WorkflowRoot ("skills/" + $SkillName)).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $fileDir = Split-Path -Parent $Path
+    foreach ($match in [regex]::Matches($content, '\]\((\.\./[^)]+)\)')) {
+        $linkPath = $match.Groups[1].Value -replace '#.*$', ''
+        if ([string]::IsNullOrWhiteSpace($linkPath)) { continue }
+        $targetPath = [System.IO.Path]::GetFullPath((Join-Path $fileDir $linkPath))
+        if (-not $targetPath.StartsWith($skillRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $issues += "Reference outside Skill directory: $linkPath"
+            $hasInvalidReference = $true
         }
     }
 
     # Check written instructions referencing other Skills
-    $allSkills = @('perf-analysis', 'deploy-troubleshoot', 'issue-report', 'tech-research', 'inference-stack')
+    $allSkills = (Get-ChildItem (Join-Path $WorkflowRoot "skills") -Directory).Name
     $otherSkills = $allSkills | Where-Object { $_ -ne $SkillName }
 
     foreach ($skill in $otherSkills) {
@@ -212,11 +213,11 @@ if ($script:FailureCount -eq 0) {
     Write-Check "All Skills satisfy self-contained constraint" "PASS"
 }
 
-# 4. Check inference-stack entry metadata
-Write-Host "`n4. Checking inference-stack entry metadata..." -ForegroundColor Cyan
-$inferenceStackRefs = Join-Path $skillsDir "inference-stack/references"
-if (Test-Path $inferenceStackRefs) {
-    $knowledgeEntries = Get-ChildItem $inferenceStackRefs -Recurse -Filter "*.md" | Where-Object {
+# 4. Check knowledge entry metadata
+Write-Host "`n4. Checking knowledge entry metadata..." -ForegroundColor Cyan
+$knowledgeDir = Join-Path $skillsDir "inference-ops/references/knowledge"
+if (Test-Path $knowledgeDir) {
+    $knowledgeEntries = Get-ChildItem $knowledgeDir -Recurse -Filter "*.md" | Where-Object {
         $_.Name -ne "README.md"
     }
 
@@ -239,12 +240,12 @@ if (Test-Path $inferenceStackRefs) {
     }
 
     if ($knowledgeEntries.Count -eq 0) {
-        Write-Check "inference-stack has no entries (as expected)" "PASS"
+        Write-Check "knowledge base has no entries (as expected)" "PASS"
     } elseif ($script:FailureCount -eq 0) {
-        Write-Check "inference-stack all entries metadata complete" "PASS"
+        Write-Check "knowledge base all entries metadata complete" "PASS"
     }
 } else {
-    Write-Check "inference-stack/references directory not found" "WARN"
+    Write-Check "inference-ops/references/knowledge directory not found" "WARN"
 }
 
 # Summary

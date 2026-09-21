@@ -1,6 +1,6 @@
 # OMP 加载验证
 
-用户自验步骤，确认 workflow Skills 在 OMP 中正确加载。
+用户自验步骤，确认 workflow Skill 在 OMP 中正确加载。
 
 ## 前提条件
 
@@ -13,44 +13,23 @@
 
 重启 OMP 应用，确保配置生效。
 
-### 2. 验证 Skills 被发现
+### 2. 验证 Skill 被发现
 
 在 OMP 中输入 `/skills` 或查看 Skills 列表，应看到：
 
-- ✓ perf-analysis
-- ✓ deploy-troubleshoot  
-- ✓ issue-report
-- ✓ tech-research
-- ✓ inference-stack（如果 Agent 触发型也显示）
+- ✓ inference-ops
 
 **如果未显示**：
 - 检查 OMP 配置中的 `skills.customDirectories` 路径是否正确
 - 检查路径是否为绝对路径
 - 查看 OMP 日志是否有加载错误
 
-### 3. 验证用户触发型 Skills 可调用
-
-依次测试：
+### 3. 验证 Skill 可调用
 
 ```
-/skill:perf-analysis
+/skill:inference-ops
 ```
-预期：进入 perf-analysis Skill，收到模式选择或引导信息
-
-```
-/skill:deploy-troubleshoot
-```
-预期：进入 deploy-troubleshoot Skill
-
-```
-/skill:issue-report
-```
-预期：进入 issue-report Skill
-
-```
-/skill:tech-research
-```
-预期：进入 tech-research Skill
+预期：进入 inference-ops Skill，收到模式选择或引导信息
 
 **如果无法调用**：
 - 检查 `agents/openai.yaml` 文件是否存在
@@ -59,25 +38,22 @@
 
 ### 4. 验证 Skill 内部链接
 
-在任一 Skill 会话中，如果 Skill 引用了内部文档（如 benchmark-protocol），
+在 Skill 会话中，如果 Skill 引用了内部文档（如 benchmark-protocol），
 应能正确加载，不应报告文件未找到。
 
 ### 5. 验证组件自包含
 
-尝试将某个 Skill 目录（如 `skills/issue-report/`）单独复制到另一位置，
+尝试将 `skills/inference-ops/` 目录单独复制到另一位置，
 添加到 OMP 配置，应仍能正常加载和使用。
 
 ## 结果记录
 
 | 项目 | 状态 | 备注 |
 | --- | --- | --- |
-| Skills 列表显示 | ☐ 通过 ☐ 失败 | |
-| perf-analysis 可调用 | ☐ 通过 ☐ 失败 | |
-| deploy-troubleshoot 可调用 | ☐ 通过 ☐ 失败 | |
-| issue-report 可调用 | ☐ 通过 ☐ 失败 | |
-| tech-research 可调用 | ☐ 通过 ☐ 失败 | |
+| Skill 列表显示 | ☐ 通过 ☐ 失败 | |
+| inference-ops 可调用 | ☐ 通过 ☐ 失败 | |
 | 内部链接正常 | ☐ 通过 ☐ 失败 | |
-| 单个 Skill 可独立使用 | ☐ 通过 ☐ 失败 | |
+| Skill 可独立使用 | ☐ 通过 ☐ 失败 | |
 
 ## 故障排查
 

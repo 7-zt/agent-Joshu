@@ -1,6 +1,0 @@
-interface:
-  display_name: "Deploy Troubleshoot"
-  short_description: "部署排障：分层收敛，事实与假设分离"
-  default_prompt: "使用 deploy-troubleshoot 对当前部署问题做分层排查：先收集完整报错与环境证据，假设逐个验证，根因需反向验证。"
-policy:
-  allow_implicit_invocation: false

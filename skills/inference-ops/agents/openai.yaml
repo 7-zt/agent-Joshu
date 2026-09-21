@@ -1,0 +1,6 @@
+interface:
+  display_name: "Inference Ops"
+  short_description: "推理运维：部署排障 + 性能优化，证据优先"
+  default_prompt: "使用 inference-ops 处理当前推理系统问题：先判定是故障排查、性能分析还是咨询调研，按对应模式工作，结论必须有证据支撑。"
+policy:
+  allow_implicit_invocation: false

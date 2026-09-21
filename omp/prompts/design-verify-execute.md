@@ -1,6 +1,6 @@
 # 设计-验证-执行循环
 
-多代理协作模式：Claude 设计 → Codex 验证 → OMP 执行。
+多代理协作模式：OMP 设计 → Codex 验证 → Claude 执行。
 
 ---
 description: 三阶段多代理协作：设计阶段产出方案与证据，验证阶段独立审查，执行阶段落地并反馈结果。
@@ -75,7 +75,7 @@ description: 三阶段多代理协作：设计阶段产出方案与证据，验�
 - 只输出审查结论与修正建议
 
 **执行阶段授权边界**：
-- 按 L0-L3 分级（见 deploy-troubleshoot）
+- 按 L0-L3 分级（见 inference-ops Skill）
 - L2/L3 需用户当次确认
 
 ## 失败条件

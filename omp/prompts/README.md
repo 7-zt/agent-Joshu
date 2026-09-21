@@ -25,12 +25,12 @@
 ### 事实-only 报告消费流程
 
 ```text
-issue-report 产出事实报告（reports/ 下）→ 新会话/新任务以报告为唯一输入
-做 deploy-troubleshoot 排查 → 结论与报告分离存放。
+inference-ops 的 reporting 参考产出事实报告（reports/ 下）→ 新会话/新任务以报告为唯一输入
+后续排障（快速/完整模式的故障轨）→ 结论与报告分离存放。
 报告本身永不回写分析内容。
 ```
 
-见：issue-report/SKILL.md
+见：inference-ops `references/reporting.md`
 
 ### 版本不明时的一致话术
 
