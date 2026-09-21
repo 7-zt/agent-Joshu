@@ -17,7 +17,7 @@ omp config set skills.customDirectories --json '["C:/Users/admin/Desktop/yuting/
 
 ## 2. 验证加载
 
-新会话中应能用 `/skill:inference-ops`（推理运维：部署排障 + 性能优化）触发。
+新会话中应能用 `/skill:inference-ops`（推理运维：部署排障 + 性能优化）触发，也应看到 2026-09-21 移植的六个 Skill：grill-me、architect、python-engineering、code-quality、deep-research（源自 ruokee-agent-kit）与 unslop（源自本地 codex，触发信号：撰写/改写面向用户的文本）。均可 `/skill:<name>` 显式触发；除 grill-me 与 inference-ops 仅用户显式触发外，其余五个允许模型隐式调用，对话匹配触发信号时自动加载（见 AGENTS.md「Skill 路由（自动触发）」）。
 
 ## 3. 工作区规则
 

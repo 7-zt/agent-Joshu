@@ -1,0 +1,6 @@
+interface:
+  display_name: "Architect"
+  short_description: "System-level architecture analysis, design, review, technology selection, and evolution"
+  default_prompt: "Use $architect for this architecture or system-design work: analyze the system, weigh tradeoffs, and ground design and technology-selection decisions in the reference material."
+policy:
+  allow_implicit_invocation: true

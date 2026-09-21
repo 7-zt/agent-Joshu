@@ -1,0 +1,6 @@
+interface:
+  display_name: "Python Engineering"
+  short_description: "Evaluate and improve Python engineering: structure, dependencies, typing, testing, tooling"
+  default_prompt: "Use $python-engineering to evaluate and improve the Python engineering practices at hand: project structure, dependency and version policy, typing, testing, language features, standard-library mechanisms, and tooling."
+policy:
+  allow_implicit_invocation: true

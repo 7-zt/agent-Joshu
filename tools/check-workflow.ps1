@@ -50,8 +50,11 @@ function Test-MarkdownLinks {
     $content = Get-Content $Path -Raw -Encoding UTF8
     $dir = Split-Path -Parent $Path
 
-    # Remove fenced code blocks
+    # Remove fenced code blocks, then inline code spans: Python generics like
+    # `def f[T](x: T)` would otherwise parse as Markdown links with an invalid
+    # path target
     $contentWithoutCode = $content -replace '(?s)```.*?```', ''
+    $contentWithoutCode = $contentWithoutCode -replace '`[^`\r\n]*`', ''
 
     # Extract Markdown links [text](path)
     $linkPattern = '\[([^\]]+)\]\(([^)]+)\)'

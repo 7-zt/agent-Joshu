@@ -1,0 +1,6 @@
+interface:
+  display_name: "Deep Research"
+  short_description: "Structured evidence-first deep research with source collection and cross-validation"
+  default_prompt: "Use $deep-research for this research task: collect sources, cross-validate claims, mark claim boundaries and unresolved questions, and deliver a source-backed report or research package."
+policy:
+  allow_implicit_invocation: true

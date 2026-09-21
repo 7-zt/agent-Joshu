@@ -27,6 +27,30 @@ Managed by Trellis. Edits outside this block are preserved; edits inside may be 
 ## 语言约定
 
 Skill frontmatter 标识与文件名用英文；正文用中文；首次出现的领域术语给中英对照。
+例外：自 ruokee-agent-kit 移植的 Skill（grill-me、python-engineering、architect、code-quality、deep-research）保留英文正文，便于与上游同步（见 DECISIONS.md 2026-09-21）。
+同日自本地 codex 移植的 unslop 同规则保留英文正文。
+
+## Skill 路由（自动触发）
+
+除 inference-ops 与 grill-me（用户触发）外，本仓库其余 Skill 均允许模型隐式调用。对话或 Trellis 任务流中出现匹配信号时，先读 `skill://<name>` 再作答，不等用户显式 `/skill:` 调用：
+
+| Skill | 触发信号 |
+| --- | --- |
+| grill-me | 想法/需求/计划不完整，需要盘问澄清成可执行规格（仅用户显式 `/skill:grill-me` 触发） |
+| architect | 架构设计、系统分析、技术选型、架构评审与演进 |
+| python-engineering | Python 工程实践：结构、依赖、类型、测试、工具链 |
+| code-quality | 代码质量评估、重构、设计原则与模式、测试设计 |
+| deep-research | 深度调研、需要来源交叉验证的调研报告 |
+| unslop | 撰写或改写任何面向用户的文本（报告、文档、消息）：去除 AI 痕迹、换回人话；上游声明「必须始终应用」 |
+| inference-ops | 推理系统排障/性能优化（仅用户显式触发） |
+
+Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-* Skill 为准）：
+
+- 需求梳理（brainstorm 阶段）：grill-me（需用户显式 `/skill:grill-me`，模型不自动加载）
+- 技术调研（research）：deep-research
+- 方案/架构设计：architect
+- 实现阶段（Python 项目）：python-engineering
+- 检查/评审（check 阶段）：code-quality
 
 ## 组件自包含（硬规则）
 

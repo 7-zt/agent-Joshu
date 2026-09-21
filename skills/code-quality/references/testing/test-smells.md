@@ -1,0 +1,101 @@
+# Test Smells
+
+A test suite is a second codebase, and it rots in its own characteristic ways. The smells below are drawn from Gerard Meszaros' _xUnit Test Patterns_, Google's testing guidance, and Kent Beck's test desiderata. Like the [code smells](../refactoring/code-smells.md) they parallel, each item is a _symptom that invites investigation_, not a verdict. A test that reads a little repetitively can be exactly right; a test coupled to one internal call can be the only way to pin a critical contract. The judgment is always whether the smell is costing the suite its value; its ability to catch regressions, to document behavior, and to survive refactoring; and the false-positive boundary at the end of each section matters as much as the detection signals.
+
+The unifying principle behind almost every smell here is Kent Beck's: **a test should be coupled to the behavior of the code and decoupled from its structure.** When a test breaks on a refactor that preserved behavior, some structural coupling leaked in. When a test passes while behavior is broken, some behavioral coverage leaked out. Most test smells are one of those two leaks wearing a specific costume.
+
+## Fragile Test
+
+**What it is.** A test that breaks when production code changes even though the _behavior under test_ did not. The test is coupled to structure, a method signature, a call sequence, an internal data shape, the surrounding context, rather than to the observable contract. Meszaros catalogs four sensitivities: interface (renaming or resignaturing breaks the test), behavior (an unrelated behavior change ripples in), data (a change to shared test data breaks unrelated tests), and context (the test depends on global or environmental state).
+
+**Why it matters.** This is the single most expensive test smell in day-to-day work, and the one behind the complaint "I change one thing and have to fix a pile of tests." A fragile suite makes every refactor cost more than it should: the safety net that was supposed to enable change instead taxes it. Worse, when a large mechanical test-fixing pass becomes routine, the team stops reading what the tests assert and starts pattern-matching the edits, so real regressions hide inside the noise. A suite that cries wolf on every rename eventually gets ignored.
+
+**Detection signals.** A refactor that preserves behavior forces edits across many test files. Tests assert on private fields, internal method names, or the _order_ of internal calls rather than on returned values or visible effects. Renaming an internal helper breaks tests that never meant to depend on it. The same literal value is duplicated across dozens of tests so one product change requires a sweep. You find yourself applying the _same_ edit to many tests at once: the change-detector tell.
+
+**Resolution.** Test through the public interface, the surface a real caller uses, and assert on observable outcomes: return values, raised exceptions, persisted state, messages sent to genuine boundaries. Pull duplicated literals into named fixtures or builders so a contract change touches one place (see [Test Code Duplication](#test-code-duplication)). Where a test must reference an internal, ask whether that internal wants to be promoted to a real, tested interface. Note that setup legitimately changes when a constructor gains a dependency; the smell is when the _assertions_ track structure, not when arrange steps follow a new signature.
+
+**Example scenario.** A service is refactored to split one method into three private helpers; behavior is identical. Forty tests fail because they used a mock framework to assert the old method was called once with specific arguments. None of the forty checked what the service actually produced, so all forty must be rewritten to match the new internal shape, and the rewrite proves nothing new.
+
+**False-positive boundary.** Some tests are _supposed_ to be sensitive to a specific implementation choice because that choice is the behavior: verifying a request is served from cache rather than the origin, or that a query uses an index, is a legitimate implementation assertion. Google's guidance allows these but expects them to be rare and clearly labeled as such. The smell is structural coupling that nobody chose; a deliberate, documented implementation test is not fragile, it is precise.
+
+## Change-Detector Test
+
+**What it is.** A test that merely restates the production code in a second form, typically all mocks and call-sequence verification, so that _any_ change to the code changes the test, but the test verifies no independent notion of correctness. Google names this explicitly: a test whose expectations are a mirror of the implementation is a change detector, not a correctness check.
+
+**Why it matters.** These tests tend toward _negative_ value. Having been written by reading the code and asserting that the code does what it does, they carry no independent notion of correctness, so when the code is wrong, the test usually asserts the wrong thing right along with it and stays green. Meanwhile they impose full maintenance cost, every refactor breaks them, and they pad the suite so real tests are harder to find. This is the extreme end of [Fragile Test](#fragile-test): maximum structural coupling, minimal behavioral coverage.
+
+**Detection signals.** A test that is almost entirely `mock(...)` setup and `verify(...)` / `assert_called_with(...)` assertions, with no assertion on a real result. The test reads like a transcription of the method body. Deleting the test loses no coverage of any input-output relationship. When the production code changes, the test's diff is the _same shape_ as the production diff.
+
+**Resolution.** Delete or rewrite. Ask what observable behavior the code is responsible for and test that instead, using real collaborators wherever they are cheap and deterministic. If the only thing worth verifying genuinely is an interaction at a boundary (a payment was charged exactly once), keep a focused interaction test at that real boundary and drop the mirror-of-internals assertions. Applied at suite scale, this is dead-weight removal, but earn it: before deleting, confirm the test pins no behavior, kills no mutant, and adds no diagnostic value that another test does not already provide. A change-detector test usually fails that bar, but "usually" is not "always," so verify rather than delete by category.
+
+**Example scenario.** A method computes a total and calls `logger.debug`, `repo.save`, and `bus.publish`. The test mocks all three and asserts they were called in that order with those arguments. It never checks the computed total. A bug in the total calculation ships green; a harmless reordering of the log line turns it red.
+
+**False-positive boundary.** A true interaction test at a real system boundary is not a change detector: verifying that an email is sent, or that a charge happens exactly once, is observable behavior a user cares about, even though it is expressed as an interaction. The smell is mirroring _internal_ interactions that no external contract mentions, not verifying the genuine side effects that are the point of the code.
+
+## Obscure Test
+
+**What it is.** A test whose intent is not readable at a glance. Meszaros groups several causes under this heading: the Eager Test (one test verifies many behaviors, so no single intent is clear), the Mystery Guest (the test depends on external data or state it does not show, so the reader cannot see what makes it pass), the General Fixture (an oversized shared setup builds a whole world and the test uses a sliver), Irrelevant Information (noise obscures the few values that matter), and Indirect Testing (the test drives the unit through layers of other objects).
+
+**Why it matters.** Tests are the documentation that cannot silently drift, but only if a human can read them. An obscure test fails to explain what guarantee it protects, so when it breaks nobody can tell whether the production code or the test is wrong. This is where DAMP beats DRY: test code should be Descriptive And Meaningful even at the cost of some repetition, because a reader must verify the test _by eye_; there is no test for the test. Over-compressed, over-abstracted test code trades the one property tests most need (obvious correctness) for a property they need least (minimal line count).
+
+**Detection signals.** A single test with several act-assert cycles for different behaviors. Values that determine the outcome are loaded from a file, a shared database row, or a fixture defined far away, so the test body does not show why it passes. A `setUp` / fixture that constructs far more than the test touches. A test wrapped in loops and conditionals so the actual case is hard to extract. Reading the test takes longer than reading the code it tests.
+
+**Resolution.** Keep one behavior per test and name it for the guarantee it protects. Inline the data that matters so the reader sees the cause and expected effect together. Prefer DAMP over DRY here. Replace a general fixture with small, purpose-named fixtures or factory helpers so each test pulls in only what it needs. Push clarifying detail into well-named helpers that remove noise without hiding the values that drive the assertion.
+
+**Example scenario.** `test_user_flow` creates a user, updates their email, adds two orders, cancels one, and asserts on the final balance: twelve setup lines, four unrelated assertions. When it fails, the failure says only that `test_user_flow` broke, and a reader must reconstruct which of four behaviors regressed.
+
+**False-positive boundary.** A genuinely multi-step behavior, an end-to-end workflow test, legitimately has more setup and more than one assertion, because the workflow _is_ the unit. And a small amount of readable duplication is not obscurity; DAMP explicitly prefers it. The smell is accidental obscurity from bundling unrelated behaviors or hiding causal data, not the irreducible size of a real scenario.
+
+## Assertion Roulette
+
+**What it is.** A test with many bare assertions and no per-assertion description, so when one fails you cannot tell which; you play roulette to find the culprit. Kent Beck's desideratum of _Specific_ is the positive form: a failing test should point at exactly what broke.
+
+**Why it matters.** Diagnosis time is a real cost, paid every time the test fails, often under deadline pressure. A test that fails with "expected true, got false" on line N of ten identical-looking assertions forces the reader to instrument or bisect to learn what actually broke. It also hints at [Obscure Test](#obscure-test): a pile of undescribed assertions usually means several behaviors crammed into one test.
+
+**Detection signals.** Long runs of assertions with no message and no structure. Failure output that names a line number but not a behavior. Several assertions that would each be a meaningful standalone check, stacked in one test with no separation.
+
+**Resolution.** Prefer one logical assertion about one behavior per test, so the test name is the failure description. When multiple assertions belong together, give each a message or use an assertion style that identifies the subject. Parametrize the same check over different inputs so each case reports separately.
+
+**False-positive boundary.** Asserting several properties of _one_ result object is not roulette: checking that a parsed record has the right name, age, and id is one behavior ("parsing produces the right record") and reads clearly. The smell is undescribed assertions across _different_ behaviors, not a handful of related checks on a single outcome.
+
+## Erratic / Non-Deterministic Test
+
+**What it is.** A test that passes sometimes and fails other times without any code change. Meszaros' Erratic Test groups the causes: interacting tests (one test's leftover state affects another), test-run wars (shared external resource contended by parallel runs), unrepeatable tests (pass once then fail on re-run), resource leakage, and genuinely non-deterministic logic (clock, randomness, network, ordering, concurrency). Fowler's essay on eradicating non-determinism treats this as an existential threat to the suite.
+
+**Why it matters.** Flakiness destroys trust in the _entire_ suite, not just the flaky test. Once red can mean "broken" or "unlucky," every failure becomes a judgment call, people start re-running until green, and real regressions get waved through as "probably just flaky." A suite you cannot trust to be meaningful is barely better than no suite. This smell is the enemy of Kent Beck's _Deterministic_ and _Isolated_ desiderata and Google's rule that tests must run in any order.
+
+**Detection signals.** Tests that fail on CI but pass locally, or fail only under parallelism, or only when run in a certain order. Tests that read or write shared state, a real clock, a shared database, files in a fixed path, module-level globals, without isolation. A test that fails on immediate re-run (it left state behind). Sleeps used to "wait for" async work.
+
+**Resolution.** Isolate: each test gets fresh state and cleans up after itself, so run order does not change the result (a test that deliberately exercises concurrency still controls it, a fixed schedule or seeded interleaving, rather than racing). Replace uncontrolled boundaries with test doubles or injected control; a fixed clock, a seeded RNG, an in-memory fake for the network. Use framework tools that auto-restore state (temp directories, environment patching that reverts on teardown) instead of hand-rolled cleanup that skips when a test fails. Never leave a known-flaky test in the main suite as a warning light; quarantine or fix it, because a tolerated flake trains everyone to ignore red.
+
+**Example scenario.** `test_report_uses_todays_date` calls the real `date.today()` and asserts a formatted string. It passes for months, then fails at a month boundary and across time zones on CI. The behavior was never wrong; the test coupled itself to the wall clock instead of injecting a fixed date.
+
+**False-positive boundary.** A test that legitimately exercises concurrency or randomness is not erratic if it controls them; a seeded generator or a deterministic scheduler makes the outcome repeatable. And an integration test that touches a real external system is allowed to be slower and is correctly quarantined into a separate suite; it is not a flaky-unit smell as long as it is not sitting in the fast suite pretending to be deterministic.
+
+## Test Code Duplication
+
+**What it is.** The same setup, assertion, or data copied across many tests, so a single change to the contract requires editing every copy. This is the DRY smell as it applies to tests, but it lives in tension with DAMP, so the resolution is more nuanced than for production code.
+
+**Why it matters.** Structural duplication, the kind where one contract change forces a synchronized edit across dozens of tests, is a maintenance tax and a source of [Fragile Test](#fragile-test) behavior. But the fix is _not_ to DRY tests as aggressively as production code, because tests must stay readable by eye (see [Obscure Test](#obscure-test)). Google's guidance is explicit: tests should be DAMP, tolerating readable repetition, and reserve extraction for _noise_, the boilerplate that obscures intent, not for the meaningful values that make each case legible.
+
+**Detection signals.** Identical multi-line setup pasted into many tests, where a change to the constructed object's shape would touch all of them. The same magic literal repeated everywhere. Copy-pasted fixture definitions in several files that are subtly (or exactly) the same; the specific "duplicate fixtures in different places" problem. A helper that would remove pure boilerplate but was never extracted.
+
+**Resolution.** Extract the _noise_, keep the _meaning_ inline. Pull repeated construction into a single shared-setup location at the nearest common scope (a shared fixture, a builder, a setup module, whatever the test framework provides) so there is one definition, not five near-copies, but let each test still show the specific inputs and expected outputs that make it readable. Use factory helpers or builders for objects that vary per test. The line to walk: remove duplication that would force a _synchronized structural edit_, preserve duplication that a reader needs to _understand the case_.
+
+**Example scenario.** Twelve tests each begin with the same eight lines building a `Config` object, differing only in one field. A new required field is added; all twelve break identically. A single fixture that builds the default config, with each test overriding the one field it cares about, would have absorbed the change in one place while keeping each test's intent visible.
+
+**False-positive boundary.** Readable, intentional repetition is not this smell: DAMP says a little duplication that keeps a test self-explanatory beats an abstraction that forces the reader to jump elsewhere. Do not extract setup into a shared helper if doing so hides the values that explain why the test passes. The smell is duplication that couples many tests to one structure, not duplication that keeps each test locally understandable.
+
+## Testing the Wrong Thing
+
+**What it is.** Effort spent testing code that carries no independent behavior worth protecting: trivial getters, framework glue, configuration values, or generic utilities exercised through contrived direct tests rather than through the behavior that uses them. Meszaros' Indirect Testing and the broader "test behavior, not incidental code" principle both bear on this.
+
+**Why it matters.** Every test is a liability as well as an asset: it must be read, maintained, and updated. A test that pins a value with no logic (a constant, a config default) or a utility with no domain meaning adds maintenance cost and coverage-percentage comfort while protecting nothing anyone would get wrong. It also inverts the coverage signal; the suite looks thorough because the easy, behavior-free code is heavily tested, while the actual decision logic may be thin. Coverage is a tool for finding _untested_ code, never a target to maximize; testing trivia to raise the number is the anti-pattern Fowler warns about directly.
+
+**Detection signals.** Tests asserting that a constant equals its literal, or that a config key has its default value: a change to the value requires changing the test in lockstep, and the test never expresses intended behavior. Tests for a getter that only returns a field. A generic `utils` function tested in isolation with synthetic inputs, when its only real callers exercise it already. A push to "get coverage up" that adds tests for the code that was easiest, not the code that was riskiest.
+
+**Resolution.** Test behavior at the level where it is decided, and let trivial code be covered incidentally by the behavior that uses it. Delete tests that only restate a constant or a config default; if a config value is load-bearing, test the _behavior it drives_, not the value itself. For a genuinely reusable utility with real edge cases (a date parser, a tricky algorithm), a direct behavioral test is warranted; the line is whether the function has _enumerable behavior that could be wrong_, not whether it lives in a file named `utils`.
+
+**Example scenario.** A test asserts `DEFAULT_TIMEOUT == 30`. Someone tunes the timeout to 45; the test fails, is "fixed" by changing 30 to 45, and has now cost two edits to protect nothing: it never checked that a timeout of 30 produced any particular behavior. The behavior worth testing (a request aborts after the configured timeout) was never written.
+
+**False-positive boundary.** A utility with real, error-prone behavior deserves direct tests regardless of where it lives; the smell is not "never test utils," it is "don't manufacture tests for code that has no behavior worth protecting." Likewise, a config value that encodes a genuine contract (a regulatory limit that must not silently change) can justify a guard test, ideally one framed as protecting the contract rather than mirroring the literal. Judge by whether the test protects a behavior someone could plausibly break, not by the code's category.

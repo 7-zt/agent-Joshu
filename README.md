@@ -9,8 +9,14 @@ workflow/
 ├── README.md            本文件
 ├── AGENTS.md            工作区 Agent 规则（证据纪律、授权分级、存储约定）
 ├── DECISIONS.md         设计决定记录（背景/决定/替代项/后果/重审条件）
-├── skills/              单一 Skill（OMP 加载，见 omp/setup.md）
-│   └── inference-ops/       推理运维：部署排障 × 性能优化（用户触发，3 模式 + 10 篇方法论文档 + 知识库协议）
+├── skills/              Skill 库（OMP 加载，见 omp/setup.md）
+│   ├── inference-ops/       推理运维：部署排障 × 性能优化（用户触发，3 模式 + 10 篇方法论文档 + 知识库协议）
+│   ├── grill-me/            需求盘问：把不完整想法/计划盘成可执行规格（用户触发）
+│   ├── architect/           架构：系统分析、设计、评审、技术选型（自动触发）
+│   ├── python-engineering/  Python 工程实践：结构/依赖/类型/测试/工具链（自动触发）
+│   ├── code-quality/        代码质量：原则、模式、重构、测试设计（自动触发）
+│   ├── deep-research/       深度调研：来源采集、交叉验证、论断边界（自动触发）
+│   └── unslop/               去除文本 AI 痕迹、换回人话（自动触发）
 ├── reports/             问题报告存储（YYYY-MM-DD-NN-theme.md）
 ├── omp/                 OMP 落地：setup.md（安装+版本探测）、prompts/（可复用模式索引 + 独立 prompt）
 ├── tests/               回归场景卡（scenarios.md）与 OMP 加载自检步骤（omp-loading.md）
@@ -21,7 +27,8 @@ workflow/
 
 1. 按 [omp/setup.md](./omp/setup.md) 挂载 Skill 目录（配置键 `skills.customDirectories`，已在 OMP 18.2.3 验证）。
 2. 重启 OMP，用 `/skill:inference-ops` 触发。
-3. 在本目录工作时 [AGENTS.md](./AGENTS.md) 的规则自动生效。
+3. 在本目录工作时 [AGENTS.md](./AGENTS.md) 的规则自动生效；其中「Skill 路由（自动触发）」节定义了其余五个 Skill 的对话/Trellis 自动触发信号。
+4. 五个移植 Skill 允许模型隐式调用：对话匹配触发信号时自动加载，也可用 `/skill:<name>` 显式触发。
 
 ## 防幻觉机制一览
 

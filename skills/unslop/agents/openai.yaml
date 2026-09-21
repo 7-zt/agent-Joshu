@@ -1,0 +1,6 @@
+interface:
+  display_name: "Unslop"
+  short_description: "Cut AI tells from any writing and add human voice"
+  default_prompt: "Use $unslop to edit this text: scan for AI patterns (puffery, AI vocabulary, em dashes, chatbot phrases, jargon), rewrite with plain speech, and add human voice while preserving meaning and tone."
+policy:
+  allow_implicit_invocation: true

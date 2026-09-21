@@ -18,6 +18,14 @@
 在 OMP 中输入 `/skills` 或查看 Skills 列表，应看到：
 
 - ✓ inference-ops
+- ✓ grill-me
+- ✓ architect
+- ✓ python-engineering
+- ✓ code-quality
+- ✓ deep-research
+- ✓ unslop
+
+（后六个 2026-09-21 移植：前五个源自 ruokee-agent-kit，unslop 源自本地 codex。除 grill-me 仅用户显式触发外，均允许模型隐式调用）
 
 **如果未显示**：
 - 检查 OMP 配置中的 `skills.customDirectories` 路径是否正确
@@ -35,6 +43,14 @@
 - 检查 `agents/openai.yaml` 文件是否存在
 - 检查 YAML 格式是否正确
 - 检查 `disable-model-invocation: true` 是否设置
+
+### 3b. 验证自动触发（六个移植 Skill）
+
+在本仓库目录开新会话，提出匹配触发信号的问题（如「帮我评估这段 Python 代码的工程实践」），
+应看到模型自动加载对应 Skill（python-engineering），无需 `/skill:` 显式调用。
+未自动加载时检查 SKILL.md frontmatter 是否残留 `disable-model-invocation: true`，
+以及 `agents/openai.yaml` 的 `allow_implicit_invocation` 是否为 `true`。
+unslop（自本地 codex 移植）同样自动触发，信号为撰写/改写面向用户的文本。
 
 ### 4. 验证 Skill 内部链接
 

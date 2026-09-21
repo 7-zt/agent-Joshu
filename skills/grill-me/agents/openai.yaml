@@ -1,0 +1,6 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "Question an idea or plan into shared understanding before acting"
+  default_prompt: "Use $grill-me to discover the requirements, experience, and preferences behind the idea or plan at hand, resolve the facts from evidence, and examine it through focused question rounds before acting."
+policy:
+  allow_implicit_invocation: false
