@@ -4,15 +4,15 @@
 
 ## 前提条件
 
-- OMP 已安装（测试版本：18.2.3）
+- OMP 已安装（测试版本：18.2.8）
 - 已按 [omp/setup.md](../omp/setup.md) 配置 `skills.customDirectories`（指向本仓库 `skills/`）
 - 已重启 OMP 使配置生效
 
 ## 第 1 步：Skill 被发现
 
-在主包仓库目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 7 个：
+在主包仓库目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 8 个：
 
-inference-ops、grill-me、architect、python-engineering、code-quality、deep-research、unslop
+inference-ops、grill-me、architect、python-engineering、code-quality、deep-research、unslop、memtrace
 
 **未显示时**：检查 `skills.customDirectories` 路径（应为设备上克隆位置）；查看 OMP 日志加载错误。
 
@@ -27,6 +27,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 | 5 | code-quality | 自动 | 「这段代码有什么质量问题，该怎么重构？」 | 自动加载 code-quality |
 | 6 | deep-research | 自动 | 「深度调研 X，需要来源交叉验证」 | 自动加载 deep-research |
 | 7 | unslop | 自动 | 「帮我改写这段报告，去掉 AI 腔」 | 自动加载 unslop |
+| 8 | memtrace | 自动 | 「帮我把这个跨会话任务记到 memtrace，先建任务再写第一条阶段记录」 | 自动加载 memtrace，用 create/log 完成 |
 
 **自动触发未生效时**：检查对应 SKILL.md frontmatter 无残留 `disable-model-invocation: true`；`agents/openai.yaml` 的 `allow_implicit_invocation: true`。
 
@@ -44,19 +45,26 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 - Skill 会话中引用内部文档（如 benchmark-protocol）应正确加载，不报文件未找到。
 - 将 `skills/inference-ops/` 单独复制到另一位置加入 OMP 配置，应仍能加载使用（组件自包含）。
 
+## 第 5 步：memtrace CLI 与扩展
+
+- CLI：在主包仓库根执行 `PYTHONPATH=. python -m memtrace --version`（bash）应输出 `memtrace 1.0.0`；`python -m memtrace read --list` 在未 init 的目录报「未找到 memtrace 项目」属正常。
+- 扩展：主包仓库根开新 OMP 会话，应出现「memtrace 任务记录已加载」提示；`.memtrace/` 存在任务时会话首条注入 `<memtrace-context>` 当前任务与最近 WAL 摘要。
+
 ## 新项目附加检查（模板安装后执行）
 
-在项目根执行 `git status`，应只见 `agent-joshu/`、`AGENTS.md`、`.gitignore` 与 Trellis 生成物；`.trellis/tasks/`、`.trellis/workspace/` 被忽略（过程本地化生效）。然后在项目目录重跑第 1–3 步。
+在项目根执行 `git status`，应只见 `agent-joshu/`、`AGENTS.md`、`.gitignore` 与 `.agents/`；`.memtrace/` 被忽略（过程本地化生效）。然后在项目目录重跑第 1–3 步与第 5 步。
 
 ## 结果记录
 
 | 项目 | 状态 |
 | --- | --- |
-| 7 个 Skill 列表显示 | ☐ 通过 ☐ 失败 |
-| 正向矩阵 1–7 全过 | ☐ 通过 ☐ 失败 |
+| 8 个 Skill 列表显示 | ☐ 通过 ☐ 失败 |
+| 正向矩阵 1–8 全过 | ☐ 通过 ☐ 失败 |
 | 负向检查（2 项） | ☐ 通过 ☐ 失败 |
 | 内部链接正常 | ☐ 通过 ☐ 失败 |
 | Skill 可独立使用 | ☐ 通过 ☐ 失败 |
+| memtrace CLI 可用 | ☐ 通过 ☐ 失败 |
+| memtrace 扩展注入 | ☐ 通过 ☐ 失败 |
 | 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用 |
 
 ## 故障排查
@@ -65,6 +73,8 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 2. SKILL.md 的 frontmatter 格式是否正确
 3. `agents/openai.yaml` 是否存在且格式正确
 4. OMP 版本是否支持自定义 Skill 目录
+5. memtrace 报「未找到项目」：项目根执行 `PYTHONPATH=<主包根> python -m memtrace init`
+6. memtrace 扩展无提示：确认 OMP 加载项目 `.omp/extensions/`，且会话 cwd 在含 `.memtrace/` 的项目内
 
 ## 注意
 

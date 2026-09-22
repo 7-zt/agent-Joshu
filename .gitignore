@@ -9,3 +9,7 @@ __pycache__/
 
 # 评审过程记录（决策已入 .agents/adr，过程材料留本地）
 /grill.md
+
+# 任务过程（memtrace 数据本地化；决策进 .agents/adr）
+/.memtrace/
+/.memtrace-archive/

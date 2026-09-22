@@ -1,0 +1,6 @@
+interface:
+  display_name: "memtrace"
+  short_description: "任务过程记录：create/log/read/search/update，阶段性 WAL（变更/推翻/验证/用户纠正）"
+  default_prompt: "使用 memtrace 记录当前任务过程：create 建任务，阶段性 log 写变更/推翻/验证小节，接手任务先 read，查历史用 search。"
+policy:
+  allow_implicit_invocation: true

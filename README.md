@@ -47,16 +47,17 @@
 
 ## 架构
 
-- **主包（本仓库）**：装在每台设备上的全局能力层——Skill 库（OMP 加载）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）。只沉淀跨项目通用的工作流、决策与经验。
-- **项目侧**：每个项目根目录一个可见的 `agent-joshu/`（与 src、docs 同级）＝ 复制模板 + `trellis init`。项目规则与决策随项目 git 走；任务过程留本地（决策进 `agent-joshu/adr/`）。
+- **主包（本仓库）**：装在每台设备上的全局能力层——Skill 库（OMP 加载）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ memtrace 代码组件（Python CLI + OMP 扩展）。只沉淀跨项目通用的工作流、决策与经验。
+- **项目侧**：每个项目根目录一个可见的 `agent-joshu/`（与 src、docs 同级）＝ 复制模板 + `memtrace init`。项目规则与决策随项目 git 走；任务过程留本地（决策进 `agent-joshu/adr/`，过程进 `.memtrace/`）。
 
 ```text
 每台设备                                 每个项目
 ├── agent-Joshu 主包（git clone）         ├── src/  docs/  README …
 │   ├── skills/ ──OMP 全局加载──┐         └── agent-joshu/（复制模板而来）
 │   ├── .agents/adr/            │                ├── adr/（决策，进项目 git）
-│   └── template/ ──────────────┘                └── VERSION（模板版本标记）
-└── omp/setup.md：新设备 3 步引导            .trellis/ 任务过程（本地）
+│   ├── memtrace/ ──────────────┤                └── VERSION（模板版本标记）
+│   └── template/ ──────────────┘         .memtrace/ 任务过程（本地，gitignore）
+└── omp/setup.md：新设备 3 步引导
 ```
 
 ## 目录
@@ -67,20 +68,22 @@
 ├── THIRD_PARTY_NOTICES.md 第三方来源与许可声明
 ├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
 ├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
-├── skills/              Skill 库（OMP 全局加载，见 omp/setup.md；6 个移植 vendored + inference-ops 原创）
+├── skills/              Skill 库（OMP 全局加载，见 omp/setup.md；6 个移植 vendored + inference-ops + memtrace 原创）
+├── memtrace/            memtrace Python 包（任务过程记录 CLI，零第三方依赖）
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
 ├── omp/                 setup.md（新设备 3 步引导）、prompts/（可复用模式索引 + 独立 prompt）
 ├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
-├── .trellis/            Trellis 流程（任务与日志本地化，不进 git）
-└── .omp/                Trellis 的 OMP 组件（trellis 生成，勿手改）
+├── .memtrace/           任务过程（memtrace 数据，本地，不进 git）
+├── .memtrace-archive/   旧任务只读归档（本地，不进 git）
+└── .omp/                OMP 项目级组件（extensions/memtrace/）
 ```
 
 ## 快速开始
 
 **新设备（3 步）**：见 [omp/setup.md](./omp/setup.md) —— 克隆 → 配置 OMP（命令自动取当前路径）→ 跑触发矩阵。
 
-**新项目（3 步）**：见 [template/README.md](./template/README.md) —— 复制 `agent-joshu/` → `trellis init` 并并入规则 → 触发矩阵 + git 状态检查。
+**新项目（3 步）**：见 [template/README.md](./template/README.md) —— 复制 `agent-joshu/` → `memtrace init` 并入规则 → 触发矩阵 + git 状态检查。
 
 ## Skill 库
 
@@ -93,6 +96,7 @@
 | code-quality | 自动 | 代码质量：原则、模式、重构、测试设计 |
 | deep-research | 自动 | 深度调研：来源采集、交叉验证、论断边界 |
 | unslop | 自动 | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」） |
+| memtrace | 自动 | 任务过程记录：create/log/read/search/update，阶段性 WAL（变更/推翻/验证/用户纠正） |
 
 ## 多代理闭环（herdr 可用时）
 

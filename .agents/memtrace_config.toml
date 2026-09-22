@@ -1,0 +1,4 @@
+# memtrace 项目配置（稀疏 TOML；未写的键走默认值）
+task_root = ".memtrace"
+# creation_policy = "strict"   # strict | permissive
+# git_policy = "ignore"        # track | ignore | none

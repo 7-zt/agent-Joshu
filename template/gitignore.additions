@@ -1,14 +1,7 @@
 # 追加到项目 .gitignore 的内容（agent-joshu 安装第 2 步）
 
 # agent-joshu 上下文：任务过程本地化，决策才进 git
-.trellis/tasks/
-.trellis/workspace/
-.trellis/.developer
-.trellis/.current-task
-.trellis/.runtime/
-.trellis/.ralph-state.json
-.trellis/.agents/
-.trellis/.agent-log
-.trellis/.session-id
+.memtrace/
+.memtrace-archive/
 __pycache__/
 *.pyc

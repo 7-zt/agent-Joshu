@@ -1,33 +1,11 @@
-<!-- TRELLIS:START -->
-# Trellis Instructions
-
-These instructions are for AI assistants working in this project.
-
-This project is managed by Trellis. The working knowledge you need lives under `.trellis/`:
-
-- `.trellis/workflow.md` — development phases, when to create tasks, skill routing
-- `.trellis/spec/` — package- and layer-scoped coding guidelines (read before writing code in a given layer)
-- `.trellis/workspace/` — per-developer journals and session traces
-- `.trellis/tasks/` — active and archived tasks (PRDs, research, jsonl context)
-
-If a Trellis command is available on your platform (e.g. `/trellis:finish-work`, `/trellis:continue`), prefer it over manual steps. Not every platform exposes every command.
-
-If you're using Codex or another agent-capable tool, additional project-scoped helpers may live in:
-- `.agents/skills/` — reusable Trellis skills
-- `.codex/agents/` — optional custom subagents
-
-Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
-
-<!-- TRELLIS:END -->
-
 # agent-Joshu 主包工作区规则
 
 本仓库是个人 AI 工作流主包（推理优化 + 部署排障方向）：全局能力层 + 项目上下文模板。Agent 在本目录及其子目录工作时遵循以下规则。
 
 ## 架构：主包与项目侧
 
-- 主包（本仓库）：Skill 能力层（OMP `skills.customDirectories` 全局加载，配置见 `omp/setup.md`）+ 跨项目决策与经验（`.agents/adr/`）+ 项目上下文模板（`template/`）。换设备按 `omp/setup.md` 三步引导。
-- 项目侧：每个项目根目录一个可见的 `agent-joshu/`（复制 `template/agent-joshu/` + `trellis init`，安装步骤见 `template/README.md`），与 src、docs 同级。项目规则与决策随项目 git，任务过程留本地。
+- 主包（本仓库）：Skill 能力层（OMP `skills.customDirectories` 全局加载，配置见 `omp/setup.md`）+ 跨项目决策与经验（`.agents/adr/`）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` Python 包与 `.omp/extensions/memtrace/`）。换设备按 `omp/setup.md` 三步引导。
+- 项目侧：每个项目根目录一个可见的 `agent-joshu/`（复制 `template/agent-joshu/` + `memtrace init`，安装步骤见 `template/README.md`），与 src、docs 同级。项目规则与决策随项目 git，任务过程留本地。
 - 记录策略：决策进 ADR（主包 `.agents/adr/`、项目 `agent-joshu/adr/`，同构）；任务过程只留本地，不进 git。
 - 回流：项目经验可泛化到多个项目时，回流主包 ADR 或对应文档，不在单个项目私藏。
 
@@ -39,7 +17,7 @@ Skill frontmatter 标识与文件名用英文；正文用中文；首次出现�
 
 ## Skill 路由（自动触发）
 
-除 inference-ops 与 grill-me（用户触发）外，本仓库其余 Skill 均允许模型隐式调用。对话或 Trellis 任务流中出现匹配信号时，先读 `skill://<name>` 再作答，不等用户显式 `/skill:` 调用：
+除 inference-ops 与 grill-me（用户触发）外，本仓库其余 Skill 均允许模型隐式调用。对话或任务流中出现匹配信号时，先读 `skill://<name>` 再作答，不等用户显式 `/skill:` 调用：
 
 | Skill | 触发信号 |
 | --- | --- |
@@ -50,14 +28,15 @@ Skill frontmatter 标识与文件名用英文；正文用中文；首次出现�
 | deep-research | 深度调研、需要来源交叉验证的调研报告 |
 | unslop | 撰写或改写任何面向用户的文本（报告、文档、消息）：去除 AI 痕迹、换回人话；上游声明「必须始终应用」 |
 | inference-ops | 推理系统排障/性能优化（仅用户显式触发） |
+| memtrace | 任务过程记录：建任务、阶段性 log（变更/推翻/验证/用户纠正）、接手任务读上下文、检索历史 |
 
-Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-* Skill 为准）：
+任务阶段映射（memtrace 任务流内作为领域增强按需叠加）：
 
-- 需求梳理（brainstorm 阶段）：grill-me（需用户显式 `/skill:grill-me`，模型不自动加载）
-- 技术调研（research）：deep-research
+- 需求梳理：grill-me（需用户显式 `/skill:grill-me`，模型不自动加载）
+- 技术调研：deep-research
 - 方案/架构设计：architect
 - 实现阶段（Python 项目）：python-engineering
-- 检查/评审（check 阶段）：code-quality
+- 检查/评审：code-quality
 
 ## 组件自包含（硬规则）
 
@@ -88,7 +67,14 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 - 问题报告：`reports/YYYY-MM-DD-NN-theme.md`（事实-only，见 inference-ops 的 reporting 参考）。主包自身维护的问题放这里；项目内的问题归项目 `agent-joshu/reports/`。
 - 调研报告与来源快照：调研任务自建目录，快照存 `sources/` 子目录。
 - 可复用 prompt：`omp/prompts/`（写入需用户确认）。
-- 任务过程（Trellis 任务与日志、任务材料目录）属过程状态，留在本地，不进 git。
+- 任务过程（memtrace 任务、WAL、任务材料目录，位于 `.memtrace/`）属过程状态，留在本地，不进 git。旧任务只读归档于 `.memtrace-archive/`，同样不进 git。
+
+## memtrace 集成（任务过程记录）
+
+- 本仓库自带 `memtrace/` Python 包（Python 3.10+，零第三方依赖）与 `.omp/extensions/memtrace/` OMP 扩展；安装契约不变（clone 即得）。决定见 `.agents/adr/decision/2026-09-22-master-kit-ships-code.md`。
+- 跨阶段/跨会话任务用 `memtrace create` 建任务，阶段性 `memtrace log` 写变更/推翻/验证/用户纠正小节；单会话琐碎任务不建。
+- 接手任务先 `memtrace read <任务> --wal`；查历史用 `memtrace search`。会话开始的当前任务注入由 OMP 扩展完成。
+- 数据模型与命令语义见 `skills/memtrace/SKILL.md`；不手工伪造 `.memtrace/` 结构，不改动 schema 字段。
 
 ## 多代理协作（herdr 可用时）
 
@@ -96,11 +82,6 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 - 流程：设计（claude）→ 独立验证（codex，只读，PASS/FAIL+证据）→ 执行（omp，落地）。
 - 验证者不重做设计；发现缺陷给具体修正建议。执行前修正必须完成。
 - 任何一步命令与预期不符：停止并报告，不猜替代命令。
-
-## tk 集成（可选）
-
-- 探测 `command -v tk` 成功才使用；通过 tk 工具管理任务，不手工创建 `.tk` 结构。
-- 未安装时用 `.trellis` 本地任务或任务材料目录；不伪造 tk 数据。
 
 ## 报告与文档
 
@@ -111,12 +92,10 @@ Trellis 任务流映射（作为领域增强按需叠加，流程仍以 trellis-
 ## 长任务模式（跨会话任务）
 
 - **触发**：任务预计需要跨多个会话（性能调优、复杂排障、大型调研）。
-- **创建**：首次出现时在工作区根或 reports/ 旁建任务目录（不用 `.tk` 格式，普通目录即可）。
-- **结构**：
-  - `README.md` 或 `TASK.md`：当前目标、稳定决策、材料入口、有效阻塞
-  - `log.md`：追加式记录用户决定、修正、验证结果、里程碑、阻塞（不记命令流水）
-  - `sources/`：来源快照
-  - `results/`：产出与验证
-- **短任务不创建**：单会话内完成的任务不建目录。
-- **不进 git**：任务目录与日志属过程状态，留本地。
-- **tk 可用时优先**：如果检测到 `tk` 命令可用，优先用 tk 工具管理任务；否则用上述普通目录。
+- **工具**：memtrace（见「memtrace 集成」节）。项目未 init 时先 `memtrace init`。
+- **结构**（memtrace 任务目录）：
+  - `TASK.md`：当前目标、稳定决策、材料入口、有效阻塞
+  - `wal/YYYY-MM-DD.md`：追加式记录变更、推翻、验证结果、用户纠正、里程碑、阻塞（阶段性汇总，不记命令流水）
+  - 材料子目录（`sources/`、`research/` 等）：按需创建
+- **短任务不创建**：单会话内完成的任务不建任务目录。
+- **不进 git**：`.memtrace/` 任务目录与 WAL 属过程状态，留本地。

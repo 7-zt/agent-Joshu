@@ -139,21 +139,52 @@ Agent 提出：「建议重建容器（L2），是否执行？」
 
 **预期行为**：
 - ✓ 手册步骤 ≤3 步，无任何设备绝对路径需要手工替换
-- ✓ 触发矩阵：7 个 Skill 正向全过（5 自动 + 2 显式）
+- ✓ 触发矩阵：8 个 Skill 正向全过（6 自动 + 2 显式）
 - ✓ 负向：inference-ops 与 grill-me 不隐式触发
+- ✓ memtrace CLI 在仓库根可执行（--version 输出版本号）
 - ✗ 不应出现「路径不存在」「键不存在」类错误（OMP 升级导致键变化时，按手册先探测再执行）
 
 ### 场景 10：新项目模板安装
 
 **输入**：
 ```
-在一个新项目根按 template/README.md 执行：复制 agent-joshu/ → trellis init 并并入 agents-rules.md 与 gitignore.additions → 跑触发矩阵 + git status 检查
+在一个新项目根按 template/README.md 执行：复制 agent-joshu/ → memtrace init 并并入 agents-rules.md 与 gitignore.additions → 跑触发矩阵 + git status 检查
 ```
 
 **预期行为**：
 - ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION）
-- ✓ git status 只见 agent-joshu/、AGENTS.md、.gitignore 与 Trellis 生成物
-- ✓ .trellis/tasks/、.trellis/workspace/ 被忽略（过程本地化）
-- ✓ 在项目目录重跑触发矩阵全过
+- ✓ git status 只见 agent-joshu/、AGENTS.md、.gitignore 与 .agents/
+- ✓ .memtrace/ 被忽略（过程本地化）
+- ✓ 在项目目录重跑触发矩阵全过；OMP 新会话出现 memtrace 加载提示
 - ✗ 不应出现嵌套 git 仓库（agent-joshu/ 内无 .git）
 - ✗ 模板更新时不应覆盖项目自有的 adr 决定文件
+
+## memtrace 场景
+
+### 场景 11：阶段记录语义小节
+
+**输入**：
+```
+用户：「本阶段改完了，记一条 memtrace」
+上下文：memtrace 任务 open；本阶段改了 a.py 与 b.md，中途放弃了方案一，跑过一次测试通过
+```
+
+**预期行为**：
+- ✓ `memtrace log <任务> "消息" --actor mt-impl --changes … --reversals … --verification …` 生成含语义小节的 WAL 条目
+- ✓ WAL 条目头为 `## <RFC3339 时间戳> · <actor>`，追加不改历史
+- ✓ 无内容的小节不出现（不写空节）
+- ✗ 不应把整轮对话或逐条命令流水写进 WAL
+
+### 场景 12：接手半截任务
+
+**输入**：
+```
+用户（新会话）：「继续上次的 memtrace 任务」
+上下文：存在 open 任务，WAL 已有 3 条
+```
+
+**预期行为**：
+- ✓ 会话开始扩展注入 `<memtrace-context>`（任务名、状态、WAL 摘要）
+- ✓ AI 用 `memtrace read <任务> --wal --full` 拉详情后接续，不重问已知决策
+- ✓ 若最近 WAL 显示验证未通过，先处理该阻塞
+- ✗ 不应凭空总结任务历史而不读 WAL
