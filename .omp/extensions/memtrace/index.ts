@@ -36,6 +36,14 @@ function defaultKitRoot(): string {
    return dirname(dirname(dirname(file)));
 }
 
+function resolveKitRoot(projectRoot: string): string {
+   const vendoredRoot = join(projectRoot, "agent-joshu");
+   if (existsSync(join(vendoredRoot, "memtrace", "__init__.py"))) {
+      return vendoredRoot;
+   }
+   return defaultKitRoot();
+}
+
 function resolvePython(): string {
    // Windows 上 spawnSync("python3") 常失败；Linux 上 python 可能指向 python2。
    // 依次探测 python/python3，探测不到时退回 python3（让报错可见）。
@@ -51,10 +59,10 @@ interface CliResult {
    stdout: string;
 }
 
-function runCli(projectRoot: string, args: string[]): CliResult {
+function runCli(projectRoot: string, kitRoot: string, args: string[]): CliResult {
    const env = {
       ...process.env,
-      PYTHONPATH: [defaultKitRoot(), process.env.PYTHONPATH].filter(Boolean).join(process.platform === "win32" ? ";" : ":"),
+      PYTHONPATH: [kitRoot, process.env.PYTHONPATH].filter(Boolean).join(process.platform === "win32" ? ";" : ":"),
       PYTHONUTF8: "1",
       PYTHONIOENCODING: "utf-8",
    };
@@ -226,7 +234,7 @@ function buildSessionContext(projectRoot: string): string {
 // hook 元数据：会话开始抓 git 变更清单（客观事实，不写语义）
 // ---------------------------------------------------------------------------
 
-function logHookMetadata(projectRoot: string, sessionId: string | undefined): void {
+function logHookMetadata(projectRoot: string, kitRoot: string, sessionId: string | undefined): void {
    let changed: string;
    try {
       const status = spawnSync("git", ["status", "--porcelain"], {
@@ -257,7 +265,7 @@ function logHookMetadata(projectRoot: string, sessionId: string | undefined): vo
       .filter((t): t is TaskMeta => t !== null && t.status !== "closed");
    if (metas.length === 0) return;
    const target = metas[metas.length - 1]!;
-   runCli(projectRoot, [
+   runCli(projectRoot, kitRoot, [
       "log",
       target.dirName,
       "会话开始：工作区状态快照",
@@ -272,14 +280,16 @@ function logHookMetadata(projectRoot: string, sessionId: string | undefined): vo
 
 export default function(pi: ExtensionAPI): void {
    let projectRoot: string | null = null;
+   let cliKitRoot: string | null = null;
    let reminderCounter = 0;
 
    pi.on("session_start", async (_event, ctx) => {
       projectRoot = findProjectRoot(ctx.cwd);
       if (!projectRoot) return; // 非 memtrace 项目：零打扰
+      cliKitRoot = resolveKitRoot(projectRoot);
 
       const sessionId = ctx.sessionManager?.getSessionId?.();
-      logHookMetadata(projectRoot, sessionId);
+      logHookMetadata(projectRoot, cliKitRoot, sessionId);
 
       const context = buildSessionContext(projectRoot);
       if (context) {
@@ -295,8 +305,9 @@ export default function(pi: ExtensionAPI): void {
    pi.on("input", async (_event, ctx) => {
       if (!projectRoot) {
          projectRoot = findProjectRoot(ctx.cwd);
+         if (projectRoot) cliKitRoot = resolveKitRoot(projectRoot);
       }
-      if (!projectRoot) return;
+      if (!projectRoot || !cliKitRoot) return;
       reminderCounter += 1;
       if (reminderCounter % REMIND_EVERY_N_TURNS !== 0) return;
 

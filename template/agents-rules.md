@@ -2,9 +2,9 @@
 
 本文件由 agent-Joshu 主包模板提供，安装时并入项目根 AGENTS.md。
 
-## Skill 能力（由主包全局加载）
+## Skill 能力（项目内自含）
 
-Skills 由设备上的 agent-Joshu 主包通过 OMP `skills.customDirectories` 提供。对话中出现匹配信号时先读 `skill://<name>` 再作答，不等用户显式 `/skill:` 调用：
+Skills 位于项目 `.omp/skills/`，由 OMP 项目级自动发现。对话中出现匹配信号时先读 `skill://<name>` 再作答，不等用户显式 `/skill:` 调用：
 
 | Skill | 触发方式 | 触发信号 |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ Skills 由设备上的 agent-Joshu 主包通过 OMP `skills.customDirectories` �
 ## 存储约定（本项目）
 
 - 决策记录：`agent-joshu/adr/`（生命周期见 `agent-joshu/adr/README.md`），进项目 git。
-- 任务过程：memtrace 任务在 `.memtrace/`（本地，已被 gitignore）。跨阶段/跨会话任务用 `memtrace create` 建任务、阶段性 `memtrace log` 写变更/推翻/验证/用户纠正小节；接手任务先 `memtrace read`，查历史用 `memtrace search`。CLI 与扩展由设备上的 agent-Joshu 主包提供。
+- 任务过程：memtrace 任务在 `.memtrace/`（本地，已被 gitignore）。跨阶段/跨会话任务用 `memtrace create` 建任务、阶段性 `memtrace log` 写变更/推翻/验证/用户纠正小节；接手任务先 `memtrace read`，查历史用 `memtrace search`。CLI 位于 `agent-joshu/memtrace/`，项目内调用使用 `PYTHONPATH=agent-joshu python -m memtrace`；扩展位于 `.omp/extensions/memtrace/`。
 - 问题报告：`agent-joshu/reports/YYYY-MM-DD-NN-theme.md`（事实-only：现状/预期/环境/复现/已尝试；禁止混入定位、根因、方案）。
 - 回流：能泛化到多个项目的经验，回流 agent-Joshu 主包（ADR 或对应文档），不在本项目私藏。
 

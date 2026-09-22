@@ -1,20 +1,51 @@
 # agent-joshu 项目上下文：安装与更新
 
-把主包工作流装进任意项目。安装 3 步；无安装器、无嵌套仓库。
+把主包工作流装进任意项目。bootstrap 一条命令安装；重跑同一条命令更新。
 
 ## 前置
 
-设备上已按主包 `omp/setup.md` 完成 3 步安装（含 memtrace CLI 所需的主包仓库与 Python 3.10+）。
+- 设备上有 Python 3.10+（memtrace CLI 的唯一运行时依赖，零第三方库）。
+- 主包仓库一份（bootstrap 从中复制；本设备是否配置 OMP 全局加载可选，见下「双模式」）。
 
-## 新项目安装（3 步）
+## 新项目安装（1 条命令）
 
-1. **复制**：把本目录下 `agent-joshu/` 整个复制到目标项目根（与 src、docs、README 同级）；同时把主包 `.omp/extensions/memtrace/` 复制到目标项目 `.omp/extensions/memtrace/`（OMP 自动加载项目本地扩展，负责会话注入与 memtrace-hook 记录）。
-2. **初始化与并入**：在项目根执行 `memtrace init`（写 `.agents/memtrace_config.toml`，建 `.memtrace/` 任务根）；把 `agents-rules.md` 全文并入项目根 `AGENTS.md`；把 `gitignore.additions` 的内容追加到项目 `.gitignore`。
-3. **验证**：新 OMP 会话跑主包 `tests/omp-loading.md` 触发矩阵；`git status` 应只见 `agent-joshu/`、`AGENTS.md`、`.gitignore`、`.agents/` 与 `.omp/extensions/memtrace/`——`.memtrace/` 任务过程目录被忽略，且会话开始出现 memtrace 当前任务注入（无任务时安静）。
+在主包仓库根执行（目标项目路径替换为实际路径）：
 
-## 更新（手动比对复制）
+```bash
+# bash
+PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>
+```
 
-- 项目内 `agent-joshu/VERSION` 记录本上下文来自的模板版本。
-- 主包模板更新后：比对主包 `template/agent-joshu/VERSION` 与项目内版本，手动复制变化的模板文件（`agent-joshu/README.md`、`agent-joshu/adr/README.md`、`agent-joshu/adr/glossary.md`、根级 `agents-rules.md`、`gitignore.additions`）。
-- 扩展更新同理：主包 `.omp/extensions/memtrace/` 变化时，向项目内同名目录手动同步。
-- `agent-joshu/adr/` 中的提案与决定是项目自有内容，更新模板时**不得覆盖**；冲突时保留项目版本并在其 ADR「变更」节记录差异。
+```powershell
+# PowerShell
+$env:PYTHONPATH="."; python -m memtrace bootstrap <目标项目路径>
+```
+
+bootstrap 做的事（纯本地复制，零网络）：
+
+1. 复制 `template/agent-joshu/` → 目标 `agent-joshu/`（adr 骨架、VERSION、README）。
+2. 复制全部 8 个 Skill → 目标 `.omp/skills/`（不要某技能时加 `--skills <逗号分隔子集>`）。
+3. 复制 `memtrace/` 包 → 目标 `agent-joshu/memtrace/`（项目内 CLI：`PYTHONPATH=<项目>/agent-joshu python -m memtrace`）。
+4. 复制 `.omp/extensions/memtrace/` → 目标 `.omp/extensions/memtrace/`（OMP 自动加载，优先调用项目内 CLI）。
+5. 执行 `memtrace init`（`.agents/memtrace_config.toml` + `.memtrace/`）。
+6. 自动追加 `.gitignore`、并入根 `AGENTS.md`（带标记区块；项目已有内容不动）。
+
+`--dry-run` 先预览将执行的动作，不写任何文件。
+
+## 验证
+
+新 OMP 会话跑主包 `tests/omp-loading.md` 触发矩阵；`git status` 应只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`——`.memtrace/` 任务过程目录被忽略，且会话开始出现 memtrace 当前任务注入（无任务时安静）。
+
+## 更新（重跑 bootstrap）
+
+主包模板或组件更新后，重跑同一条命令：
+
+- kit 内容（`.omp/skills/`、`agent-joshu/memtrace/`、`.omp/extensions/memtrace/`、模板静态文件）比对更新，`agent-joshu/VERSION` 与 `bootstrap-manifest.json` 同步。
+- 项目自有内容（`agent-joshu/adr/` 中的提案与决定、已并入根 AGENTS.md 的标记区块、`agent-joshu/reports/`）**永不覆盖**，只在漂移报告中列出。
+- 你改过的 kit 文件不覆盖：主包新版写入同名 `.new` 文件，由你决定采用与否。
+- 主包已删除的内容不清理：漂移报告列出残留，手动删除。
+
+## 双模式说明
+
+- **项目自含（默认推荐）**：上述 bootstrap 流程。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+。
+- **主开发机全局模式**：按主包 `omp/setup.md` 配置 `skills.customDirectories` 指向主包 skills/，同设备所有项目共享技能。与项目自含并存，详见 `omp/setup.md`「双模式」节。

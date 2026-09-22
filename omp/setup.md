@@ -37,10 +37,19 @@ omp config set skills.customDirectories --json "[\"$($pwd.Path)/skills\"]"
 - OMP 扩展：`.omp/extensions/memtrace/`——OMP 按项目 `.omp/extensions/` 约定加载（与 Skill 全局加载不同，扩展随项目）。在仓库内开会话即自动生效；`.omp/` 目录整体随主包 git。
 - 验证：在仓库根开新 OMP 会话，应出现「memtrace 任务记录已加载」提示（有任务时附当前任务注入）。
 
+## 双模式：全局加载与项目自含
+
+主包支持两种部署模式，可并存（主开发机典型形态）：
+
+- **全局模式（本手册 3 步）**：OMP `skills.customDirectories` 指向本仓库 `skills/`，同设备所有项目共享 8 个 Skill。适合固定主开发机，技能随主包 `git pull` 一处更新。
+- **项目自含模式**：目标项目用 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 把工具包（skills + memtrace CLI + 扩展 + 模板）完整复制进项目（见 [template/README.md](../template/README.md)）。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+，无需本仓库。
+
+双模式并存时，项目内 `.omp/skills/`（OMP 自动发现）与全局 customDirectories 同名 Skill 可能双重加载，实际行为以 `tests/omp-loading.md` 双源并存检查的实测记录为准；冲突时回退为任一：统一项目自含（移除全局指向）或依赖全局。
+
 ## 工作区规则
 
 - 在本仓库内工作时：根 [AGENTS.md](../AGENTS.md) 自动生效（主包自身维护规则）。
-- 在其他项目内工作：用 [template/](../template/README.md) 给项目安装 `agent-joshu/` 上下文，规则随模板进入项目根 AGENTS.md。
+- 在其他项目内工作：bootstrap 安装 `agent-joshu/` 上下文（见上「双模式」与 [template/README.md](../template/README.md)），规则随模板进入项目根 AGENTS.md。
 
 ## 可选集成探测
 

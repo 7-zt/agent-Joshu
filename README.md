@@ -43,21 +43,21 @@
 
 涉及依赖安装、环境修改、容器重建、服务重启或生产变更时，本项目只提供分级和检查方法，实际操作仍需要明确授权。
 
-推理优化 × 部署排障方向的个人 Agent Kit。**一份克隆装好能力，一套模板进入项目。** 核心理念：证据优先、事实与推断分离、版本敏感断言必须可审计、跨设备零路径耦合。
+推理优化 × 部署排障方向的个人 Agent Kit。**主包一份克隆，项目一条命令。** 核心理念：证据优先、事实与推断分离、版本敏感断言必须可审计、跨设备零路径耦合。
 
 ## 架构
 
-- **主包（本仓库）**：装在每台设备上的全局能力层——Skill 库（OMP 加载）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ memtrace 代码组件（Python CLI + OMP 扩展）。只沉淀跨项目通用的工作流、决策与经验。
-- **项目侧**：每个项目根目录一个可见的 `agent-joshu/`（与 src、docs 同级）＝ 复制模板 + `memtrace init`。项目规则与决策随项目 git 走；任务过程留本地（决策进 `agent-joshu/adr/`，过程进 `.memtrace/`）。
+- **主包（本仓库）**：复杂源仓——Skill 库 + 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` CLI、`memtrace bootstrap` 子命令、OMP 扩展）。主开发机可按 `omp/setup.md` 配置全局加载（双模式见该文档）。
+- **项目侧（自含）**：主包根一条命令 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 装入完整工具包——可见的 `agent-joshu/`（模板 + adr + vendored `memtrace/` CLI + VERSION + manifest）+ `.omp/skills/`（8 个 Skill，OMP 自动发现）+ `.omp/extensions/memtrace/`。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+；重跑同命令＝比对更新，项目自有内容永不覆盖。
+- 记录策略：决策随项目 git 走（`agent-joshu/adr/`）；任务过程留本地（`.memtrace/`）。
 
 ```text
-每台设备                                 每个项目
-├── agent-Joshu 主包（git clone）         ├── src/  docs/  README …
-│   ├── skills/ ──OMP 全局加载──┐         └── agent-joshu/（复制模板而来）
-│   ├── .agents/adr/            │                ├── adr/（决策，进项目 git）
-│   ├── memtrace/ ──────────────┤                └── VERSION（模板版本标记）
-│   └── template/ ──────────────┘         .memtrace/ 任务过程（本地，gitignore）
-└── omp/setup.md：新设备 3 步引导
+主包（源仓，主开发机）              每个项目（自含，任意设备含内网机）
+├── skills/（8 个）    ──复制─►     .omp/skills/（OMP 自动发现）
+├── memtrace/ + 扩展   ──复制─►     agent-joshu/memtrace/ + .omp/extensions/
+├── template/agent-joshu/ ──►       agent-joshu/（adr 骨架 + VERSION + manifest）
+└── .agents/adr/（跨项目决策）      AGENTS.md / .gitignore（标记区块并入）
+                                    .memtrace/（任务过程，本地 gitignore）
 ```
 
 ## 目录
@@ -69,7 +69,7 @@
 ├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
 ├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
 ├── skills/              Skill 库（OMP 全局加载，见 omp/setup.md；6 个移植 vendored + inference-ops + memtrace 原创）
-├── memtrace/            memtrace Python 包（任务过程记录 CLI，零第三方依赖）
+├── memtrace/            memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
 ├── omp/                 setup.md（新设备 3 步引导）、prompts/（可复用模式索引 + 独立 prompt）
@@ -105,39 +105,40 @@
 
 ### 路径 2：新项目接入
 
-1. **复制**：把 `template/agent-joshu/` 整个复制到目标项目根（与 src、docs 同级）；再把主包 `.omp/extensions/memtrace/` 复制到目标项目 `.omp/extensions/memtrace/`（扩展随项目生效，负责会话注入与记录提醒）。
-2. **初始化与并入**（项目根执行；`<主包根>` 换成本设备主包克隆位置）：
+### 路径 2：新项目接入（bootstrap 一条命令）
+
+1. **安装**（主包根执行，`<目标项目路径>` 替换为实际路径；纯本地复制，零网络，`--dry-run` 可先预览）：
 
    ```bash
    # bash
-   PYTHONPATH=<主包根> python -m memtrace init
+   PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>
    ```
 
    ```powershell
    # PowerShell
-   $env:PYTHONPATH=<主包根>; python -m memtrace init
+   $env:PYTHONPATH="."; python -m memtrace bootstrap <目标项目路径>
    ```
 
-   然后把 `template/agents-rules.md` 全文并入项目根 `AGENTS.md`，把 `template/gitignore.additions` 追加到项目 `.gitignore`。
-   预期：项目根出现 `.agents/memtrace_config.toml` 与 `.memtrace/`。
-3. **验证**：项目根开新 OMP 会话。
-   预期：出现「memtrace 任务记录已加载」；`git status` 只见 `agent-joshu/`、`AGENTS.md`、`.gitignore`、`.agents/` 与 `.omp/`，`.memtrace/` 被忽略。
+   预期：报告模板、Skills（8 个）、memtrace、扩展四组新增计数与冲突数（首次应为「冲突 0」）；项目根出现 `agent-joshu/`、`.omp/`、`.agents/memtrace_config.toml`、`.memtrace/`，并自动并入根 `AGENTS.md` 标记区块与 `.gitignore` 追加。
+2. **验证**：项目根开新 OMP 会话。
+   预期：出现「memtrace 任务记录已加载」（无任务时安静）；`git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`，`.memtrace/` 被忽略。
+3. **更新**：主包组件更新后重跑同一条命令＝比对更新；项目自有内容（adr、已并入段落）永不覆盖，你改过的 kit 文件写同名 `.new` 由你决定。
 
 ### 路径 3：30 秒体验 memtrace
 
-在任意已 init 的项目根执行（bash 形式；PowerShell 用路径 2 的 `$env:PYTHONPATH` 写法）：
+在主包根或任一 bootstrap 过的项目根执行（bash 形式；PowerShell 用 `$env:PYTHONPATH` 写法）：主包根用 `PYTHONPATH=.`，bootstrap 过的项目用 `PYTHONPATH=<项目>/agent-joshu`。
 
 ```bash
-PYTHONPATH=<主包根> python -m memtrace create "第一个任务"
-PYTHONPATH=<主包根> python -m memtrace log 01 "开个头" --actor user
-PYTHONPATH=<主包根> python -m memtrace read 01
+PYTHONPATH=. python -m memtrace create "第一个任务"
+PYTHONPATH=. python -m memtrace log 22-01 "开个头" --actor user
+PYTHONPATH=. python -m memtrace read 22-01
 ```
 
 预期：
 
-- `create` 输出任务摘要（目录名、id、`status: planning`、path 指向 `.memtrace/YYYY/MM/DD-NN--slug/`）
+- `create` 输出任务摘要（目录名、id、`status: planning`、path 指向 `.memtrace/YYYY/MM/NN--slug/`）
 - `log` 输出 `已追加 1 条（actor=user）→ …/wal/YYYY-MM-DD.md`
-- `read` 回显同一任务的元数据、TASK.md 预览与 WAL 文件列表（看内容用 `--wal`）
+- `read` 回显同一任务的元数据、TASK.md 预览与 WAL 文件列表（看内容用 `--wal`）；任务引用可用完整目录名、短序号（如 `22-01`）、纯 slug 或 id 前缀
 
 ## Skill 库
 
@@ -172,7 +173,7 @@ PYTHONPATH=<主包根> python -m memtrace read 01
 - 报告解决后从 `reports/` 删除或移入对应任务材料。
 - OMP 升级后重验 `skills.customDirectories`（`omp config get ... --json`），不猜键名。
 - 新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
-- `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目按 `template/README.md` 手动比对更新。
+- `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目重跑 `bootstrap` 比对更新（见 `template/README.md`「更新」节）。
 
 ## 来源与致谢
 

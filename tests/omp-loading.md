@@ -50,9 +50,23 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 - CLI：在主包仓库根执行 `PYTHONPATH=. python -m memtrace --version`（bash）应输出 `memtrace 1.0.0`；`python -m memtrace read --list` 在未 init 的目录报「未找到 memtrace 项目」属正常。
 - 扩展：主包仓库根开新 OMP 会话，应出现「memtrace 任务记录已加载」提示；`.memtrace/` 存在任务时会话首条注入 `<memtrace-context>` 当前任务与最近 WAL 摘要。
 
-## 新项目附加检查（模板安装后执行）
+## 新项目附加检查（bootstrap 安装后执行）
 
-在项目根执行 `git status`，应只见 `agent-joshu/`、`AGENTS.md`、`.gitignore` 与 `.agents/`；`.memtrace/` 被忽略（过程本地化生效）。然后在项目目录重跑第 1–3 步与第 5 步。
+在主包仓库根执行 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 后，逐项核对：
+
+1. **清单核对**：项目内存在 `agent-joshu/`（含 `memtrace/` 包、`VERSION`、`bootstrap-manifest.json`、`adr/` 骨架）、`.omp/skills/` 下 8 个 Skill 目录、`.omp/extensions/memtrace/`（index.ts）、`.agents/memtrace_config.toml`、`.memtrace/`。
+2. **git 状态**：项目根 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`；`.memtrace/` 被忽略（过程本地化生效）。
+3. **AGENTS.md 并入**：根 `AGENTS.md` 含 agent-joshu 标记区块（agents-rules.md 全文）。
+4. 然后在项目目录重跑第 1–3 步与第 5 步（此时技能来自项目 `.omp/skills/`，memtrace 注入应出现）。
+
+## 双源并存检查（主开发机执行）
+
+前提：OMP 已配 `skills.customDirectories` 指向主包 `skills/`（全局模式），且已 bootstrap 的项目在本机。实测点（S10，行为以实测记录为准）：
+
+1. 在 bootstrap 后的项目根开新 OMP 会话，`/skills` 查看列表。
+2. 记录：8 个 Skill 是否正常可见、有无同名重复条目、显式与自动触发是否正常（抽测 1 显式 + 1 自动即可）。
+3. 记录：会话开始的 memtrace 注入提示是否出现（此时扩展应优先用项目内 `agent-joshu/memtrace/` CLI——可在项目内 `.memtrace/` 建一条测试任务后重开会话验证注入内容来自本项目）。
+4. **若同名冲突或触发异常**：回退任一并记录——统一项目自含（`omp config set` 移除主包指向）或依赖全局；两方向皆可接受，记入结果记录。
 
 ## 结果记录
 
@@ -66,6 +80,8 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 | memtrace CLI 可用 | ☐ 通过 ☐ 失败 |
 | memtrace 扩展注入 | ☐ 通过 ☐ 失败 |
 | 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用 |
+| 新项目 bootstrap 清单核对（4 项） | ☐ 通过 ☐ 失败 ☐ 不适用 |
+| 双源并存检查（含回退记录） | ☐ 通过 ☐ 失败 ☐ 不适用 |
 
 ## 故障排查
 

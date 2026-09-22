@@ -1,7 +1,7 @@
 # ADR 决定：主包与项目侧架构（agent-Joshu 工具包化）
 
 归档：2026-09-22
-被反向决定：2026-09-22-memtrace-replaces-trellis.md（其中「流程引擎保留 Trellis」「以 tk 替代 Trellis——被拒」两条；其余规则仍有效，由该决定延续）
+被反向决定：2026-09-22-memtrace-replaces-trellis.md（其中「流程引擎保留 Trellis」「以 tk 替代 Trellis——被拒」两条；其余规则仍有效，由该决定延续）；2026-09-22-project-self-contained-bootstrap.md（其中「Python 单命令安装器——被拒」一条；其余规则仍有效，由该决定延续并扩展部署单元语义）
 
 ## 背景
 

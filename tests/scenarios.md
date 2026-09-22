@@ -144,20 +144,35 @@ Agent 提出：「建议重建容器（L2），是否执行？」
 - ✓ memtrace CLI 在仓库根可执行（--version 输出版本号）
 - ✗ 不应出现「路径不存在」「键不存在」类错误（OMP 升级导致键变化时，按手册先探测再执行）
 
-### 场景 10：新项目模板安装
+### 场景 10：新项目 bootstrap 安装
 
 **输入**：
 ```
-在一个新项目根按 template/README.md 执行：复制 agent-joshu/ → memtrace init 并并入 agents-rules.md 与 gitignore.additions → 跑触发矩阵 + git status 检查
+在一个新项目根按 template/README.md 执行：在主包仓库根 PYTHONPATH=. python -m memtrace bootstrap <目标项目路径> → 跑触发矩阵 + git status 检查
 ```
 
 **预期行为**：
-- ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION）
-- ✓ git status 只见 agent-joshu/、AGENTS.md、.gitignore 与 .agents/
-- ✓ .memtrace/ 被忽略（过程本地化）
+- ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION + bootstrap-manifest.json + memtrace/ 包）、.omp/skills/ 8 个 Skill、.omp/extensions/memtrace/、.agents/memtrace_config.toml、.memtrace/
+- ✓ git status 只见 agent-joshu/、.omp/、.agents/、AGENTS.md 与 .gitignore
+- ✓ .memtrace/ 被忽略（过程本地化）；全程零网络调用
 - ✓ 在项目目录重跑触发矩阵全过；OMP 新会话出现 memtrace 加载提示
 - ✗ 不应出现嵌套 git 仓库（agent-joshu/ 内无 .git）
-- ✗ 模板更新时不应覆盖项目自有的 adr 决定文件
+- ✗ 不应覆盖项目既有文件（AGENTS.md 只追加标记区块，.gitignore 只幂等追加）
+
+### 场景 10b：重跑 bootstrap 更新
+
+**输入**：
+```
+已 bootstrap 的项目：改动 agent-joshu/adr/decision/ 下一个文件与 .omp/skills/memtrace/SKILL.md 各一处 → 在主包仓库根重跑同一条 bootstrap 命令
+```
+
+**预期行为**：
+- ✓ adr/decision/ 下被改的文件原样保留（项目自有内容永不覆盖）
+- ✓ 被改的 SKILL.md 保留项目版，主包新版出现在同名 .new 文件，漂移报告列出
+- ✓ 未改动且主包有更新的 kit 文件被更新；manifest 与 VERSION 同步
+- ✓ 主包已删除的内容不被清理，仅在漂移报告中列出残留
+- ✗ 不应删除项目内任何文件
+- ✗ 退出码不应非零（漂移是报告，不是错误）
 
 ## memtrace 场景
 

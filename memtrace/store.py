@@ -264,7 +264,12 @@ def find_task(project_root: Path, cfg: dict, ref: str) -> Task:
     for task in tasks:
         dirname = task.dir.name
         rel_posix = task.dir.relative_to(config_mod.task_root_dir(project_root, cfg)).as_posix()
-        if ref == dirname or ref == rel_posix or dirname.endswith("--" + ref) or dirname == ref:
+        if (
+            ref == dirname
+            or ref == rel_posix
+            or dirname.startswith(ref + "--")
+            or dirname.endswith("--" + ref)
+        ):
             by_dir.append(task)
     if len(by_dir) == 1:
         return by_dir[0]

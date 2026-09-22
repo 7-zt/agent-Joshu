@@ -1,4 +1,4 @@
-"""memtrace CLI：init / create / log / read / search / update。
+"""memtrace CLI：init / bootstrap / create / log / read / search / update。
 
 零第三方依赖，argparse 子命令。Windows 与 Linux 均可运行
 （Python 3.10+，路径全用 pathlib，文本统一 UTF-8 + LF）。
@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from . import bootstrap as bootstrap_mod
 from . import config as config_mod
 from . import search as search_mod
 from . import store, wal
@@ -20,19 +21,41 @@ def _print(text: str) -> None:
     sys.stdout.write(text + "\n")
 
 
-def cmd_init(args: argparse.Namespace) -> int:
-    root = Path.cwd()
+def _relative_display(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.name
+
+
+def init_project(root: Path) -> int:
+    root = root.resolve()
     path = config_mod.config_path(root)
     if path.is_file():
-        _print(f"已存在：{path}（幂等，不覆盖）")
+        _print(f"已存在：{_relative_display(path, root)}（幂等，不覆盖）")
         return 0
     config_mod.write_config(root)
     task_root = config_mod.task_root_dir(root)
     task_root.mkdir(parents=True, exist_ok=True)
-    _print(f"已写入 {path.as_posix()}")
-    _print(f"已创建任务根目录 {task_root.as_posix()}/")
+    _print(f"已写入 {_relative_display(path, root)}")
+    _print(f"已创建任务根目录 {_relative_display(task_root, root)}/")
     _print("记得把任务过程目录加入 .gitignore（git_policy=ignore）。")
     return 0
+
+
+def cmd_init(args: argparse.Namespace) -> int:
+    return init_project(Path.cwd())
+
+
+def cmd_bootstrap(args: argparse.Namespace) -> int:
+    return bootstrap_mod.bootstrap_project(
+        args.target,
+        skills_arg=args.skills,
+        dry_run=args.dry_run,
+        skip_init=args.skip_init,
+        init_project=init_project,
+        print_line=_print,
+    )
 
 
 def cmd_create(args: argparse.Namespace) -> int:
@@ -174,6 +197,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_init = sub.add_parser("init", help="在项目根初始化（写 .agents/memtrace_config.toml + 任务根目录）")
     p_init.set_defaults(func=cmd_init)
+
+    p_bootstrap = sub.add_parser("bootstrap", help="把主包复制为目标项目内的自含工具包")
+    p_bootstrap.add_argument("target", help="已存在的目标项目路径")
+    p_bootstrap.add_argument("--skills", help="逗号分隔的 Skill 子集；缺省复制全部")
+    p_bootstrap.add_argument("--dry-run", action="store_true", help="只预览动作与漂移，不写文件")
+    p_bootstrap.add_argument("--skip-init", action="store_true", help="跳过收尾 memtrace init")
+    p_bootstrap.set_defaults(func=cmd_bootstrap)
 
     p_create = sub.add_parser("create", help="创建任务（目录 + memtrace.toml + TASK.md）")
     p_create.add_argument("name", help="任务名（生成目录短名 slug）")
