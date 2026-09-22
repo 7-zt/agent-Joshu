@@ -34,7 +34,7 @@ bootstrap 做的事（纯本地复制，零网络）：
 
 ## 验证
 
-新 OMP 会话跑主包 `tests/omp-loading.md` 触发矩阵；`git status` 应只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`——`.memtrace/` 任务过程目录被忽略，且会话开始出现 memtrace 当前任务注入（无任务时安静）。
+新 OMP 会话跑主包 `tests/omp-loading.md` 触发矩阵；有 git 仓库时 `git status` 应只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`——`.memtrace/` 任务过程目录被忽略（无 git 项目跳过此判据）；会话开始出现 memtrace 当前任务注入（无任务时安静）。无 git 项目是完全支持的场景（`git_policy` 语义见 `.agents/memtrace_config.toml` 注释；决策见主包 ADR「无 git 项目一等公民支持」）。
 
 ## 更新（重跑 bootstrap）
 

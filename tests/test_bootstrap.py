@@ -6,8 +6,10 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from memtrace import config, store
+from memtrace import cli as cli_mod
 from memtrace.cli import main
 
 
@@ -115,6 +117,163 @@ class BootstrapTests(unittest.TestCase):
             code, _, error = self.run_cli("bootstrap", str(target))
             self.assertEqual(code, 1)
             self.assertIn("缺少 VERSION", error)
+
+    def test_git_policy_controls_gitignore(self) -> None:
+        cases = {
+            "ignore": "ignore",
+            "track": "track",
+            "none": "none",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            for policy, expected in cases.items():
+                with self.subTest(policy=policy):
+                    target = base / policy
+                    target.mkdir()
+                    self.write_config(target, policy)
+                    if policy == "track":
+                        (target / ".gitignore").write_text(
+                            "# 追加到项目 .gitignore 的内容\n.memtrace/\n",
+                            encoding="utf-8",
+                            newline="\n",
+                        )
+                    before = (
+                        (target / ".gitignore").read_bytes()
+                        if (target / ".gitignore").is_file()
+                        else None
+                    )
+
+                    code, output, error = self.run_cli("bootstrap", str(target))
+
+                    self.assertEqual((code, error), (0, ""))
+                    gitignore = target / ".gitignore"
+                    if expected == "ignore":
+                        self.assertIn(".memtrace/", gitignore.read_text(encoding="utf-8"))
+                    elif expected == "track":
+                        self.assertEqual(gitignore.read_bytes(), before)
+                        self.assertIn("git_policy=track 与现有 .memtrace/ 忽略规则冲突", output)
+                    else:
+                        self.assertFalse(gitignore.exists())
+                        self.assertIn("git_policy=none：已跳过追加 .gitignore", output)
+
+    def test_commented_and_invalid_git_policy_use_default_ignore(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            for name, config_text, warning in (
+                (
+                    "commented",
+                    '# git_policy = "track"\n',
+                    None,
+                ),
+                (
+                    "invalid",
+                    'git_policy = "sometimes"\n',
+                    "警告：git_policy=sometimes 无效，按默认 ignore 处理",
+                ),
+            ):
+                with self.subTest(name=name):
+                    target = base / name
+                    target.mkdir()
+                    config_path = target / ".agents" / "memtrace_config.toml"
+                    config_path.parent.mkdir()
+                    config_path.write_text(config_text, encoding="utf-8", newline="\n")
+
+                    code, output, error = self.run_cli("bootstrap", str(target))
+
+                    self.assertEqual((code, error), (0, ""))
+                    self.assertIn(
+                        ".memtrace/",
+                        (target / ".gitignore").read_text(encoding="utf-8"),
+                    )
+                    if warning:
+                        self.assertIn(warning, output)
+
+    def test_track_and_none_dry_run_skip_gitignore_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            for policy in ("track", "none"):
+                with self.subTest(policy=policy):
+                    target = base / policy
+                    target.mkdir()
+                    self.write_config(target, policy)
+                    before = self.snapshot(target)
+
+                    code, output, error = self.run_cli(
+                        "bootstrap",
+                        str(target),
+                        "--dry-run",
+                    )
+
+                    self.assertEqual((code, error), (0, ""))
+                    self.assertIn(f"git_policy={policy}：将跳过追加 .gitignore", output)
+                    self.assertEqual(self.snapshot(target), before)
+
+    def test_bootstrap_succeeds_without_git_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "gitless-project"
+            target.mkdir()
+
+            code, output, error = self.run_cli("bootstrap", str(target))
+
+            self.assertEqual((code, error), (0, ""))
+            self.assertIn("bootstrap 完成", output)
+            self.assertIn(
+                ".memtrace/",
+                (target / ".gitignore").read_text(encoding="utf-8"),
+            )
+
+    def test_init_prints_policy_hint_only_on_first_init(self) -> None:
+        expected = {
+            "ignore": "按默认策略留在本地（git_policy=ignore）",
+            "track": "git_policy=track：任务过程将进项目 git",
+            "none": "git_policy=none：不管理 git 策略",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            for policy, message in expected.items():
+                with self.subTest(policy=policy):
+                    target = base / policy
+                    target.mkdir()
+
+                    def write_config(root: Path, selected: str = policy) -> Path:
+                        path = config.config_path(root)
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text(
+                            f'git_policy = "{selected}"\n',
+                            encoding="utf-8",
+                            newline="\n",
+                        )
+                        return path
+
+                    stdout = io.StringIO()
+                    with patch.object(cli_mod.config_mod, "write_config", side_effect=write_config):
+                        with redirect_stdout(stdout):
+                            self.assertEqual(cli_mod.init_project(target), 0)
+                    self.assertIn(message, stdout.getvalue())
+
+                    stdout = io.StringIO()
+                    with redirect_stdout(stdout):
+                        self.assertEqual(cli_mod.init_project(target), 0)
+                    self.assertIn("已存在：.agents/memtrace_config.toml", stdout.getvalue())
+                    self.assertNotIn(message, stdout.getvalue())
+
+    @staticmethod
+    def write_config(target: Path, policy: str) -> None:
+        path = target / ".agents" / "memtrace_config.toml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            f'git_policy = "{policy}"\n',
+            encoding="utf-8",
+            newline="\n",
+        )
+
+    @staticmethod
+    def snapshot(root: Path) -> dict[str, bytes]:
+        return {
+            path.relative_to(root).as_posix(): path.read_bytes()
+            for path in root.rglob("*")
+            if path.is_file()
+        }
 
 
 class FindTaskTests(unittest.TestCase):

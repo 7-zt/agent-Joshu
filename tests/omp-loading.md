@@ -54,7 +54,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 在主包仓库根执行 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 后，逐项核对：
 
 1. **清单核对**：项目内存在 `agent-joshu/`（含 `memtrace/` 包、`VERSION`、`bootstrap-manifest.json`、`adr/` 骨架）、`.omp/skills/` 下 8 个 Skill 目录、`.omp/extensions/memtrace/`（index.ts）、`.agents/memtrace_config.toml`、`.memtrace/`。
-2. **git 状态**：项目根 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`；`.memtrace/` 被忽略（过程本地化生效）。
+2. **git 状态**（有 git 仓库时检查；无 git 项目跳过本项，属完全支持场景）：项目根 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`；`.memtrace/` 被忽略（过程本地化生效）。
 3. **AGENTS.md 并入**：根 `AGENTS.md` 含 agent-joshu 标记区块（agents-rules.md 全文）。
 4. 然后在项目目录重跑第 1–3 步与第 5 步（此时技能来自项目 `.omp/skills/`，memtrace 注入应出现）。
 
@@ -69,7 +69,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 | Skill 可独立使用 | ☐ 通过 ☐ 失败 |
 | memtrace CLI 可用 | ☐ 通过 ☐ 失败 |
 | memtrace 扩展注入 | ☐ 通过 ☐ 失败 |
-| 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用 |
+| 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用（无 git 项目） |
 | 新项目 bootstrap 清单核对（4 项） | ☐ 通过 ☐ 失败 ☐ 不适用 |
 
 ## 故障排查

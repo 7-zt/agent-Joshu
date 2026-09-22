@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import bootstrap_files as files
+from . import config as config_mod
 from . import store
 from .timeutil import rfc3339_now
 
@@ -33,6 +34,7 @@ class BootstrapReport:
     residual: list[str] = field(default_factory=list)
     untouched: list[str] = field(default_factory=list)
     written: list[str] = field(default_factory=list)
+    notices: list[str] = field(default_factory=list)
     manifest_changed: bool = False
 
 
@@ -147,12 +149,40 @@ def bootstrap_project(
         )
         report.untouched.extend(files.collect_project_owned(target))
 
+        config = config_mod.load_config(target)
+        raw_git_policy = str(config.get("git_policy", config_mod.DEFAULT_GIT_POLICY))
+        if raw_git_policy in {"ignore", "track", "none"}:
+            git_policy = raw_git_policy
+        else:
+            git_policy = config_mod.DEFAULT_GIT_POLICY
+            report.notices.append(
+                f"警告：git_policy={raw_git_policy} 无效，按默认 ignore 处理"
+            )
+
         active_path = ".gitignore"
-        gitignore_action = files.merge_gitignore(root, target, dry_run=dry_run)
+        gitignore_action = files.merge_gitignore(
+            root,
+            target,
+            git_policy=git_policy,
+            dry_run=dry_run,
+        )
         if gitignore_action == "changed" and not dry_run:
             report.written.append(".gitignore")
+        elif gitignore_action == "changed":
+            report.notices.append("git_policy=ignore：将追加 .gitignore")
         elif gitignore_action == "unchanged":
             report.untouched.append(".gitignore")
+        elif gitignore_action == "conflict-track":
+            report.untouched.append(
+                ".gitignore（git_policy=track 与现有 .memtrace/ 忽略规则冲突，"
+                "请手动移除该追加块；未自动修改）"
+            )
+        elif gitignore_action == "skipped-track":
+            verb = "将跳过" if dry_run else "已跳过"
+            report.notices.append(f"git_policy=track：{verb}追加 .gitignore")
+        elif gitignore_action == "skipped-none":
+            verb = "将跳过" if dry_run else "已跳过"
+            report.notices.append(f"git_policy=none：{verb}追加 .gitignore")
 
         active_path = "AGENTS.md"
         agents_action = files.merge_agents(root, target, version, dry_run=dry_run)
@@ -255,6 +285,8 @@ def _print_report(
             f"（新增 {stats.added}，更新 {stats.updated}，冲突 {stats.conflicts}，无变化 {stats.unchanged}）"
         )
     print_line("Skills：" + ", ".join(selected_skills))
+    for notice in report.notices:
+        print_line(notice)
     _print_section("已更新（kit 覆盖）", report.updated, print_line)
     conflict_title = (
         "冲突预览（将写 .new）"

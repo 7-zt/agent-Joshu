@@ -5,7 +5,7 @@ description: 结构化任务过程记录器（含任务管理）：何时创建�
 
 # memtrace：任务过程记录
 
-memtrace 是本仓库自研的任务过程记录器：每项目根 `.memtrace/` 本地目录（不进 git），按任务聚拢过程痕迹，产出「压缩上下文」——AI 换会话可注入续接，人可按目录直接翻。
+memtrace 是本仓库自研的任务过程记录器：每项目根 `.memtrace/` 本地目录（默认不进 git，`git_policy=track` 时除外；无 git 项目本就只在本地），按任务聚拢过程痕迹，产出「压缩上下文」——AI 换会话可注入续接，人可按目录直接翻。
 
 ## 何时用
 
@@ -60,7 +60,7 @@ memtrace update <任务引用> --status closed --reason "原因" --actor <谁>
 
 ## 与其他记录的分工
 
-- 长期决策 → ADR（进 git），不写进 WAL。
+- 长期决策 → ADR（项目有 git 仓库时随项目 git，无 git 项目留本地目录），不写进 WAL。
 - 事实-only 问题报告 → `reports/`。
 - 评审过程材料 → 放任务目录的材料子目录。
 - memtrace 只记过程；不要把 ADR/reports 的内容复制进 WAL。

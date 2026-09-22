@@ -139,10 +139,10 @@ Agent 提出：「建议重建容器（L2），是否执行？」
 
 **预期行为**：
 - ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION + bootstrap-manifest.json + memtrace/ 包）、.omp/skills/ 8 个 Skill、.omp/extensions/memtrace/、.agents/memtrace_config.toml、.memtrace/
-- ✓ git status 只见 agent-joshu/、.omp/、.agents/、AGENTS.md 与 .gitignore
-- ✓ .memtrace/ 被忽略（过程本地化）；全程零网络调用
+- ✓ 有 git 仓库时：git status 只见 agent-joshu/、.omp/、.agents/、AGENTS.md 与 .gitignore，`.memtrace/` 被忽略（过程本地化）；无 git 项目跳过本判据（完全支持场景），bootstrap 照常成功
+- ✓ 全程零网络调用
 - ✓ 在项目目录重跑触发矩阵全过；OMP 新会话出现 memtrace 加载提示
-- ✗ 不应出现嵌套 git 仓库（agent-joshu/ 内无 .git）
+- ✗ 不应出现嵌套 git 仓库（agent-joshu/ 内无 .git；有 git 仓库的项目才检查本项）
 - ✗ 不应覆盖项目既有文件（AGENTS.md 只追加标记区块，.gitignore 只幂等追加）
 
 ### 场景 10：重跑 bootstrap 更新

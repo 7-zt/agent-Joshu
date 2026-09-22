@@ -31,8 +31,8 @@ Skills 位于项目 `.omp/skills/`，由 OMP 项目级自动发现。对话中�
 
 ## 存储约定（本项目）
 
-- 决策记录：`agent-joshu/adr/`（生命周期见 `agent-joshu/adr/README.md`），进项目 git。
-- 任务过程：memtrace 任务在 `.memtrace/`（本地，已被 gitignore）。跨阶段/跨会话任务用 `memtrace create` 建任务、阶段性 `memtrace log` 写变更/推翻/验证/用户纠正小节；接手任务先 `memtrace read`，查历史用 `memtrace search`。CLI 位于 `agent-joshu/memtrace/`，项目内调用使用 `PYTHONPATH=agent-joshu python -m memtrace`；扩展位于 `.omp/extensions/memtrace/`。
+- 决策记录：`agent-joshu/adr/`（生命周期见 `agent-joshu/adr/README.md`）；项目有 git 仓库时随项目 git 走，无 git 项目就只在本地目录维护（回滚与归因能力随之缺失，属项目侧取舍）。
+- 任务过程：memtrace 任务在 `.memtrace/`（有 git 仓库且 `git_policy=ignore` 时被 gitignore 留在本地；`git_policy=track` 时随项目 git；无 git 项目本就无此区分）。跨阶段/跨会话任务用 `memtrace create` 建任务、阶段性 `memtrace log` 写变更/推翻/验证/用户纠正小节；接手任务先 `memtrace read`，查历史用 `memtrace search`。CLI 位于 `agent-joshu/memtrace/`，项目内调用使用 `PYTHONPATH=agent-joshu python -m memtrace`；扩展位于 `.omp/extensions/memtrace/`。
 - 问题报告：`agent-joshu/reports/YYYY-MM-DD-NN-theme.md`（事实-only：现状/预期/环境/复现/已尝试；禁止混入定位、根因、方案）。
 - 回流：能泛化到多个项目的经验，回流 agent-Joshu 主包（ADR 或对应文档），不在本项目私藏。
 

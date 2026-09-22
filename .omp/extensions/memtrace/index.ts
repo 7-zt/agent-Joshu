@@ -234,8 +234,9 @@ function buildSessionContext(projectRoot: string): string {
 // hook 元数据：会话开始抓 git 变更清单（客观事实，不写语义）
 // ---------------------------------------------------------------------------
 
-function logHookMetadata(projectRoot: string, kitRoot: string, sessionId: string | undefined): void {
-   let changed: string;
+export function logHookMetadata(projectRoot: string, kitRoot: string, sessionId: string | undefined): void {
+   let changed = "";
+   let gitExitCode: number | null;
    try {
       const status = spawnSync("git", ["status", "--porcelain"], {
          cwd: projectRoot,
@@ -243,17 +244,20 @@ function logHookMetadata(projectRoot: string, kitRoot: string, sessionId: string
          timeout: 5000,
          windowsHide: true,
       });
-      if (status.status !== 0 || !status.stdout) return;
-      changed = status.stdout
-         .split(/\r?\n/)
-         .filter(Boolean)
-         .slice(0, 50)
-         .map((line) => line.trim())
-         .join("; ");
+      gitExitCode = status.status;
+      if (status.status === 0) {
+         if (!status.stdout) return;
+         changed = status.stdout
+            .split(/\r?\n/)
+            .filter(Boolean)
+            .slice(0, 50)
+            .map((line) => line.trim())
+            .join("; ");
+         if (!changed) return;
+      }
    } catch {
       return;
    }
-   if (!changed) return;
 
    // 找当前 open 任务追加（多 open 时挑最近创建的；无 open 任务则跳过）
    const taskDirs = findTaskRoots(projectRoot);
@@ -265,6 +269,19 @@ function logHookMetadata(projectRoot: string, kitRoot: string, sessionId: string
       .filter((t): t is TaskMeta => t !== null && t.status !== "closed");
    if (metas.length === 0) return;
    const target = metas[metas.length - 1]!;
+   if (gitExitCode !== 0) {
+      const message = gitExitCode === 128
+         ? "会话开始：工作区快照不可用（无 git 仓库）"
+         : "会话开始：工作区快照不可用（git 命令失败）";
+      runCli(projectRoot, kitRoot, [
+         "log",
+         target.dirName,
+         message,
+         "--actor", "memtrace-hook",
+         "--body", `session: ${sessionId ?? "unknown"}\ngit status: 不可用（git 命令失败，退出码 ${String(gitExitCode)}）`,
+      ]);
+      return;
+   }
    runCli(projectRoot, kitRoot, [
       "log",
       target.dirName,

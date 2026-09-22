@@ -112,11 +112,31 @@ def sync_file(
     return "conflict", candidate_changed and not dry_run
 
 
-def merge_gitignore(root: Path, target: Path, *, dry_run: bool) -> str:
-    source = (root / "template" / "gitignore.additions").read_text(encoding="utf-8")
+def merge_gitignore(
+    root: Path,
+    target: Path,
+    *,
+    git_policy: str,
+    dry_run: bool,
+) -> str:
     destination = target / ".gitignore"
+    current = destination.read_text(encoding="utf-8") if destination.is_file() else ""
+    if git_policy == "track":
+        active_lines = {
+            line.strip()
+            for line in current.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+        if GITIGNORE_MARKER in current or ".memtrace/" in active_lines:
+            return "conflict-track"
+        return "skipped-track"
+    if git_policy == "none":
+        return "skipped-none"
+    if git_policy != "ignore":
+        raise ValueError(f"不支持的 git_policy：{git_policy}")
+
+    source = (root / "template" / "gitignore.additions").read_text(encoding="utf-8")
     if destination.is_file():
-        current = destination.read_text(encoding="utf-8")
         current_lines = set(current.splitlines())
         wanted_lines = {line for line in source.splitlines() if line}
         if GITIGNORE_MARKER in current or wanted_lines.issubset(current_lines):

@@ -39,7 +39,16 @@ def init_project(root: Path) -> int:
     task_root.mkdir(parents=True, exist_ok=True)
     _print(f"已写入 {_relative_display(path, root)}")
     _print(f"已创建任务根目录 {_relative_display(task_root, root)}/")
-    _print("记得把任务过程目录加入 .gitignore（git_policy=ignore）。")
+    git_policy = str(config_mod.load_config(root).get("git_policy", config_mod.DEFAULT_GIT_POLICY))
+    if git_policy == "track":
+        _print("git_policy=track：任务过程将进项目 git；请勿将 .memtrace/ 加入 .gitignore。")
+    elif git_policy == "none":
+        _print("git_policy=none：不管理 git 策略，.memtrace/ 是否忽略由你自行决定。")
+    else:
+        _print(
+            "任务过程目录 .memtrace/ 按默认策略留在本地（git_policy=ignore）；"
+            "bootstrap 已代为追加 .gitignore 时无需手动处理，手动 init 的项目请自行加入 .gitignore。"
+        )
     return 0
 
 
