@@ -21,9 +21,9 @@ from .timeutil import rfc3339_now, today_parts
 SCHEMA_VERSION = 1
 STATUSES = ("planning", "open", "closed")
 
-# 目录名：DD-NN--slug；旧实现生成的 YYYY-MM-DD-NN--slug 仍可扫描。
-TASK_DIR_RE = re.compile(r"^(\d{2})-(\d{2})--(.+)$")
-LEGACY_TASK_DIR_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-(\d{2})--(.+)$")
+# 目录名：YYYY-MM-DD-NN--slug（NN 为当日序号）；旧格式 DD-NN--slug 仍可扫描。
+TASK_DIR_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})-(\d{2})--(.+)$")
+LEGACY_TASK_DIR_RE = re.compile(r"^(\d{2})-(\d{2})--(.+)$")
 
 WAL_SEMANTIC_SECTIONS = ("变更", "推翻", "验证", "用户纠正")
 
@@ -287,7 +287,7 @@ def find_task(project_root: Path, cfg: dict, ref: str) -> Task:
 
 
 def _next_seq_for_date(root_dir: Path, year: str, month: str, date: str) -> int:
-    """给定日期的下一个序号：兼容旧目录并生成 DD-NN--slug。"""
+    """给定日期的下一个序号：兼容旧 DD-NN 目录并生成 YYYY-MM-DD-NN--slug。"""
     month_dir = root_dir / year / month
     max_seq = 0
     if month_dir.is_dir():
@@ -295,11 +295,11 @@ def _next_seq_for_date(root_dir: Path, year: str, month: str, date: str) -> int:
             if not entry.is_dir():
                 continue
             match = TASK_DIR_RE.match(entry.name)
-            if match and match.group(1) == date[-2:]:
+            if match and match.group(1) == date:
                 max_seq = max(max_seq, int(match.group(2)))
                 continue
             legacy = LEGACY_TASK_DIR_RE.match(entry.name)
-            if legacy and legacy.group(1) == date:
+            if legacy and legacy.group(1) == date[-2:]:
                 max_seq = max(max_seq, int(legacy.group(2)))
     return max_seq + 1
 
@@ -343,7 +343,7 @@ def create_task(
 
     seq = _next_seq_for_date(root_dir, year, month, date)
     slug = make_slug(name)
-    task_dir = root_dir / year / month / f"{day}-{seq:02d}--{slug}"
+    task_dir = root_dir / year / month / f"{date}-{seq:02d}--{slug}"
     if task_dir.exists():
         raise MemtraceError(f"任务目录已存在：{task_dir}")
     task_dir.mkdir(parents=True)

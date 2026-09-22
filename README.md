@@ -124,8 +124,8 @@
 
 ```bash
 PYTHONPATH=. python -m memtrace create "第一个任务"
-PYTHONPATH=. python -m memtrace log 22-01 "开个头" --actor user
-PYTHONPATH=. python -m memtrace read 22-01
+PYTHONPATH=. python -m memtrace log 2026-09-22-01 "开个头" --actor user
+PYTHONPATH=. python -m memtrace read 2026-09-22-01
 ```
 
 预期：
