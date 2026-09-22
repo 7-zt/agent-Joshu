@@ -25,7 +25,7 @@
 
 这套工具并不追求让 Agent 完全无人看管，也不打算用一堆规则替代工程判断。它更像一个个人工作台，让 Agent 在长任务、跨会话和多项目环境里保持方向，并让每一次失败、修正和决定都有地方可查。
 
-现在我把它分享出来，希望能帮到曾经和我一样，只会不断补提示词、重开会话，却仍然无法稳定获得理想结果的人。
+现在我把它分享出来，希望能帮到和我曾经一样，只会不断补提示词、重开会话，却仍然无法稳定获得理想结果的人。
 
 ### 适用人群
 
@@ -93,25 +93,6 @@
 | code-quality | 自动 | 代码质量：原则、模式、重构、测试设计 |
 | deep-research | 自动 | 深度调研：来源采集、交叉验证、论断边界 |
 | unslop | 自动 | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」） |
-
-后六个自 ruokee-agent-kit（五个）与本地 codex（unslop）移植，英文正文保留以便与上游 diff 同步（见对应 ADR）。
-
-## 防幻觉机制一览
-
-| 机制 | 落点 |
-| --- | --- |
-| 数字断言最低证据集（环境+命令+负载+统计+样本数） | inference-ops `references/benchmark-protocol.md` |
-| 请求级分布 vs 跨运行统计分开；改进小于波动不称提升 | 同上 §3 |
-| A/B 单变量原则，混杂因素必列 | 同上 §5 |
-| 命令五元组（文本/退出码/stdout/stderr/位置）与脱敏 | inference-ops `references/evidence-and-snapshot.md` |
-| 命令分级 L0-L3；「排查」≠授权改环境 | inference-ops SKILL.md、AGENTS.md |
-| 根因需反向验证；未验证只能是「最可能原因」 | inference-ops `workflow/full.md` |
-| 事实-only 报告，禁止定位/方案混入 | inference-ops `references/reporting.md`、reports/ |
-| 论断五分类（事实/推断/判断/宣传/未解决） | inference-ops `references/reporting.md` |
-| 来源快照审计链（原文/摘要+URL+作者+日期） | inference-ops `references/reporting.md` |
-| 知识条目审计元数据（source/version/status） | inference-ops `references/knowledge-base.md` |
-| 版本不明 → 「需确认当前版本」，不给行为断言 | inference-ops SKILL.md + AGENTS.md |
-| 零发现合法；不编造凑数 | inference-ops 停止规则 |
 
 ## 多代理闭环（herdr 可用时）
 
