@@ -81,9 +81,63 @@
 
 ## 快速开始
 
-**新设备（3 步）**：见 [omp/setup.md](./omp/setup.md) —— 克隆 → 配置 OMP（命令自动取当前路径）→ 跑触发矩阵。
+前置提醒：OMP 已安装并可用；Python 3.10+（memtrace CLI 需要）。两条安装路径的完整细节分别以 [omp/setup.md](./omp/setup.md) 与 [template/README.md](./template/README.md) 为准，本节只给关键步骤与验证点。
 
-**新项目（3 步）**：见 [template/README.md](./template/README.md) —— 复制 `agent-joshu/` → `memtrace init` 并入规则 → 触发矩阵 + git 状态检查。
+### 路径 1：新设备安装主包
+
+1. **克隆仓库**：`git clone <仓库地址> <本地目录>` 后进入目录。
+   预期：目录内含 `skills/`、`memtrace/`、`template/`、`.omp/extensions/memtrace/`。
+2. **配置 OMP 加载 Skill**（仓库根执行，命令自动取当前路径，勿手改成绝对路径）：
+
+   ```bash
+   # bash
+   omp config set skills.customDirectories --json "[\"$(pwd)/skills\"]"
+   ```
+
+   ```powershell
+   # PowerShell
+   omp config set skills.customDirectories --json "[\"$($pwd.Path)/skills\"]"
+   ```
+
+   预期：命令无报错；重启 OMP 后生效。
+3. **跑触发矩阵验证**：新 OMP 会话按 [tests/omp-loading.md](./tests/omp-loading.md) 执行。
+   预期：8 个 Skill 列表可见，正向矩阵 8 项＋负向 2 项全过；会话出现「memtrace 任务记录已加载」。
+
+### 路径 2：新项目接入
+
+1. **复制**：把 `template/agent-joshu/` 整个复制到目标项目根（与 src、docs 同级）；再把主包 `.omp/extensions/memtrace/` 复制到目标项目 `.omp/extensions/memtrace/`（扩展随项目生效，负责会话注入与记录提醒）。
+2. **初始化与并入**（项目根执行；`<主包根>` 换成本设备主包克隆位置）：
+
+   ```bash
+   # bash
+   PYTHONPATH=<主包根> python -m memtrace init
+   ```
+
+   ```powershell
+   # PowerShell
+   $env:PYTHONPATH=<主包根>; python -m memtrace init
+   ```
+
+   然后把 `template/agents-rules.md` 全文并入项目根 `AGENTS.md`，把 `template/gitignore.additions` 追加到项目 `.gitignore`。
+   预期：项目根出现 `.agents/memtrace_config.toml` 与 `.memtrace/`。
+3. **验证**：项目根开新 OMP 会话。
+   预期：出现「memtrace 任务记录已加载」；`git status` 只见 `agent-joshu/`、`AGENTS.md`、`.gitignore`、`.agents/` 与 `.omp/`，`.memtrace/` 被忽略。
+
+### 路径 3：30 秒体验 memtrace
+
+在任意已 init 的项目根执行（bash 形式；PowerShell 用路径 2 的 `$env:PYTHONPATH` 写法）：
+
+```bash
+PYTHONPATH=<主包根> python -m memtrace create "第一个任务"
+PYTHONPATH=<主包根> python -m memtrace log 01 "开个头" --actor user
+PYTHONPATH=<主包根> python -m memtrace read 01
+```
+
+预期：
+
+- `create` 输出任务摘要（目录名、id、`status: planning`、path 指向 `.memtrace/YYYY/MM/DD-NN--slug/`）
+- `log` 输出 `已追加 1 条（actor=user）→ …/wal/YYYY-MM-DD.md`
+- `read` 回显同一任务的元数据、TASK.md 预览与 WAL 文件列表（看内容用 `--wal`）
 
 ## Skill 库
 
