@@ -42,7 +42,7 @@ def kit_root() -> Path:
 
 
 def available_skills(root: Path) -> list[str]:
-    skills_root = root / "skills"
+    skills_root = root / ".omp" / "skills"
     try:
         return sorted(
             path.name
@@ -50,7 +50,7 @@ def available_skills(root: Path) -> list[str]:
             if path.is_dir() and (path / "SKILL.md").is_file()
         )
     except OSError as exc:
-        raise store.MemtraceError("主包 skills/ 目录不可读") from exc
+        raise store.MemtraceError("主包 .omp/skills/ 目录不可读") from exc
 
 
 def parse_skills(raw: str | None, valid: list[str]) -> list[str]:

@@ -51,7 +51,7 @@ def collect_sources(root: Path, selected_skills: list[str]) -> list[SourceFile]:
         ),
     ]
     groups.extend(
-        ("Skills", root / "skills" / name, Path(".omp") / "skills" / name)
+        ("Skills", root / ".omp" / "skills" / name, Path(".omp") / "skills" / name)
         for name in selected_skills
     )
 

@@ -47,13 +47,13 @@
 
 ## 架构
 
-- **主包（本仓库）**：复杂源仓——Skill 库 + 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` CLI、`memtrace bootstrap` 子命令、OMP 扩展）。主开发机可按 `omp/setup.md` 配置全局加载（双模式见该文档）。
+- **主包（本仓库）**：复杂源仓——Skill 库（`.omp/skills/`，OMP 项目级自动发现，与项目侧同构）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` CLI、`memtrace bootstrap` 子命令、OMP 扩展）。git clone 即用，零设备级配置。
 - **项目侧（自含）**：主包根一条命令 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 装入完整工具包——可见的 `agent-joshu/`（模板 + adr + vendored `memtrace/` CLI + VERSION + manifest）+ `.omp/skills/`（8 个 Skill，OMP 自动发现）+ `.omp/extensions/memtrace/`。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+；重跑同命令＝比对更新，项目自有内容永不覆盖。
 - 记录策略：决策随项目 git 走（`agent-joshu/adr/`）；任务过程留本地（`.memtrace/`）。
 
 ```text
-主包（源仓，主开发机）              每个项目（自含，任意设备含内网机）
-├── skills/（8 个）    ──复制─►     .omp/skills/（OMP 自动发现）
+主包（源仓，git clone）              每个项目（自含，任意设备含内网机）
+├── .omp/skills/（8 个）─同构复制─►     .omp/skills/（OMP 自动发现）
 ├── memtrace/ + 扩展   ──复制─►     agent-joshu/memtrace/ + .omp/extensions/
 ├── template/agent-joshu/ ──►       agent-joshu/（adr 骨架 + VERSION + manifest）
 └── .agents/adr/（跨项目决策）      AGENTS.md / .gitignore（标记区块并入）
@@ -68,44 +68,21 @@
 ├── THIRD_PARTY_NOTICES.md 第三方来源与许可声明
 ├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
 ├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
-├── skills/              Skill 库（OMP 全局加载，见 omp/setup.md；6 个移植 vendored + inference-ops + memtrace 原创）
 ├── memtrace/            memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
-├── omp/                 setup.md（新设备 3 步引导）、prompts/（可复用模式索引 + 独立 prompt）
+├── omp/                 prompts/（可复用模式索引 + 独立 prompt）
 ├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
 ├── .memtrace/           任务过程（memtrace 数据，本地，不进 git）
 ├── .memtrace-archive/   旧任务只读归档（本地，不进 git）
-└── .omp/                OMP 项目级组件（extensions/memtrace/）
+└── .omp/                skills/（8 个 Skill，OMP 项目级自动发现）+ extensions/memtrace/
 ```
 
 ## 快速开始
 
-前置提醒：OMP 已安装并可用；Python 3.10+（memtrace CLI 需要）。两条安装路径的完整细节分别以 [omp/setup.md](./omp/setup.md) 与 [template/README.md](./template/README.md) 为准，本节只给关键步骤与验证点。
+前置提醒：OMP 已安装并可用；Python 3.10+（memtrace CLI 需要）。新机器零安装——克隆本仓库即用（技能在 `.omp/skills/`，OMP 项目级自动发现）；安装细节以 [template/README.md](./template/README.md) 为准，本节只给关键步骤与验证点。
 
-### 路径 1：新设备安装主包
-
-1. **克隆仓库**：`git clone <仓库地址> <本地目录>` 后进入目录。
-   预期：目录内含 `skills/`、`memtrace/`、`template/`、`.omp/extensions/memtrace/`。
-2. **配置 OMP 加载 Skill**（仓库根执行，命令自动取当前路径，勿手改成绝对路径）：
-
-   ```bash
-   # bash
-   omp config set skills.customDirectories --json "[\"$(pwd)/skills\"]"
-   ```
-
-   ```powershell
-   # PowerShell
-   omp config set skills.customDirectories --json "[\"$($pwd.Path)/skills\"]"
-   ```
-
-   预期：命令无报错；重启 OMP 后生效。
-3. **跑触发矩阵验证**：新 OMP 会话按 [tests/omp-loading.md](./tests/omp-loading.md) 执行。
-   预期：8 个 Skill 列表可见，正向矩阵 8 项＋负向 2 项全过；会话出现「memtrace 任务记录已加载」。
-
-### 路径 2：新项目接入
-
-### 路径 2：新项目接入（bootstrap 一条命令）
+### 路径 1：新项目接入（bootstrap 一条命令）
 
 1. **安装**（主包根执行，`<目标项目路径>` 替换为实际路径；纯本地复制，零网络，`--dry-run` 可先预览）：
 
@@ -124,7 +101,7 @@
    预期：出现「memtrace 任务记录已加载」（无任务时安静）；`git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`，`.memtrace/` 被忽略。
 3. **更新**：主包组件更新后重跑同一条命令＝比对更新；项目自有内容（adr、已并入段落）永不覆盖，你改过的 kit 文件写同名 `.new` 由你决定。
 
-### 路径 3：30 秒体验 memtrace
+### 路径 2：30 秒体验 memtrace
 
 在主包根或任一 bootstrap 过的项目根执行（bash 形式；PowerShell 用 `$env:PYTHONPATH` 写法）：主包根用 `PYTHONPATH=.`，bootstrap 过的项目用 `PYTHONPATH=<项目>/agent-joshu`。
 
@@ -171,7 +148,6 @@ PYTHONPATH=. python -m memtrace read 22-01
 
 - 知识条目（`inference-ops` 的 `references/knowledge/`）按需生成（一场景一条目），引擎大版本发布后标 `needs-review` 复核。
 - 报告解决后从 `reports/` 删除或移入对应任务材料。
-- OMP 升级后重验 `skills.customDirectories`（`omp config get ... --json`），不猜键名。
 - 新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
 - `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目重跑 `bootstrap` 比对更新（见 `template/README.md`「更新」节）。
 

@@ -1,5 +1,7 @@
 # ADR 决定：OMP skills.customDirectories 加载
 
+被反向决定：2026-09-22-project-level-skills-auto-discovery.md（设备级 customDirectories 加载方式废止；项目级 .omp/skills/ 自动发现为唯一机制）
+
 ## 背景
 
 OMP 18.2.3 支持通过配置加载自定义 Skill 目录。其他方式包括：全局安装、插件打包、内嵌到 OMP。

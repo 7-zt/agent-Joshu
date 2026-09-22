@@ -33,3 +33,9 @@
 ## 重审条件
 
 全部目标设备可联网时（重审插件化 omp install）；vendored 体积成为实际负担时（重审子集默认）；OMP 上游改变 `.omp/skills/` 项目级自动发现行为时（重审分发通道）。
+
+## 变更
+
+### 2026-09-22 删除「主开发机双模式并存」子句
+
+设备维度整体废止（见 2026-09-22-project-level-skills-auto-discovery.md）：项目级 `.omp/skills/` 自动发现为唯一技能机制，主包 skills/ 已 `git mv` 至 `.omp/skills/`，主开发机全局加载与双源并存场景不复存在。其余条款（部署单元＝项目、bootstrap 语义、离线硬约束、更新语义）不变；「OMP 扩展优先项目内 CLI」条款不变。

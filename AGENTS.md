@@ -5,7 +5,7 @@
 ## 架构：主包与项目侧
 
 - 部署单元＝项目（决定见 `.agents/adr/decision/2026-09-22-project-self-contained-bootstrap.md`）：主包＝复杂源仓（维护成本留在主包）；项目＝自含轻量包。
-- 主包（本仓库）：Skill 能力层（主开发机 OMP `skills.customDirectories` 全局加载，配置见 `omp/setup.md`）+ 跨项目决策与经验（`.agents/adr/`）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` Python 包、`memtrace bootstrap` 子命令与 `.omp/extensions/memtrace/`）。换设备按 `omp/setup.md` 三步引导（可选）。
+- 主包（本仓库）：Skill 能力层（`.omp/skills/`，OMP 项目级自动发现，与项目侧同构）+ 跨项目决策与经验（`.agents/adr/`）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` Python 包、`memtrace bootstrap` 子命令与 `.omp/extensions/memtrace/`）。git clone 即用，零设备级配置。
 - 项目侧（自含）：`PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 一条命令装入完整工具包——可见的 `agent-joshu/`（模板 + adr + vendored `memtrace/` CLI + VERSION + manifest）+ `.omp/skills/`（8 Skill，OMP 项目级自动发现）+ `.omp/extensions/memtrace/`（优先调用项目内 CLI）。安装与更新步骤见 `template/README.md`；重跑＝比对更新，项目自有内容永不覆盖。项目 clone 到任意设备（含内网机）即得全部能力，只需 OMP + Python 3.10+。
 - 记录策略：决策进 ADR（主包 `.agents/adr/`、项目 `agent-joshu/adr/`，同构）；任务过程只留本地，不进 git。
 - 回流：项目经验可泛化到多个项目时，回流主包 ADR 或对应文档，不在单个项目私藏。

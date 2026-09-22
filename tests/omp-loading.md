@@ -1,20 +1,19 @@
 # OMP 逐 Skill 触发矩阵
 
-用户自验步骤：确认主包 Skill 在 OMP 中正确加载与触发。**新设备安装第 3 步（omp/setup.md）与新项目安装第 3 步（template/README.md）都以本矩阵收尾。**
+用户自验步骤：确认 Skill 在 OMP 中正确加载与触发。**新项目安装（template/README.md）以本矩阵收尾；主包克隆与 bootstrap 后项目同构，均适用。**
 
 ## 前提条件
 
 - OMP 已安装（测试版本：18.2.8）
-- 已按 [omp/setup.md](../omp/setup.md) 配置 `skills.customDirectories`（指向本仓库 `skills/`）
-- 已重启 OMP 使配置生效
+- 待验证目录（主包仓库或 bootstrap 后项目）根存在 `.omp/skills/`
 
 ## 第 1 步：Skill 被发现
 
-在主包仓库目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 8 个：
+在待验证目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 8 个：
 
 inference-ops、grill-me、architect、python-engineering、code-quality、deep-research、unslop、memtrace
 
-**未显示时**：检查 `skills.customDirectories` 路径（应为设备上克隆位置）；查看 OMP 日志加载错误。
+**未显示时**：确认目录根 `.omp/skills/` 存在且含 8 个 Skill 目录；查看 OMP 日志加载错误。
 
 ## 第 2 步：正向触发矩阵（每个 Skill 都试一遍）
 
@@ -43,7 +42,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 ## 第 4 步：Skill 内部链接与自包含
 
 - Skill 会话中引用内部文档（如 benchmark-protocol）应正确加载，不报文件未找到。
-- 将 `skills/inference-ops/` 单独复制到另一位置加入 OMP 配置，应仍能加载使用（组件自包含）。
+- 将 `.omp/skills/inference-ops/` 单独复制到另一项目的 `.omp/skills/`，应仍能加载使用（组件自包含）。
 
 ## 第 5 步：memtrace CLI 与扩展
 
@@ -59,15 +58,6 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 3. **AGENTS.md 并入**：根 `AGENTS.md` 含 agent-joshu 标记区块（agents-rules.md 全文）。
 4. 然后在项目目录重跑第 1–3 步与第 5 步（此时技能来自项目 `.omp/skills/`，memtrace 注入应出现）。
 
-## 双源并存检查（主开发机执行）
-
-前提：OMP 已配 `skills.customDirectories` 指向主包 `skills/`（全局模式），且已 bootstrap 的项目在本机。实测点（S10，行为以实测记录为准）：
-
-1. 在 bootstrap 后的项目根开新 OMP 会话，`/skills` 查看列表。
-2. 记录：8 个 Skill 是否正常可见、有无同名重复条目、显式与自动触发是否正常（抽测 1 显式 + 1 自动即可）。
-3. 记录：会话开始的 memtrace 注入提示是否出现（此时扩展应优先用项目内 `agent-joshu/memtrace/` CLI——可在项目内 `.memtrace/` 建一条测试任务后重开会话验证注入内容来自本项目）。
-4. **若同名冲突或触发异常**：回退任一并记录——统一项目自含（`omp config set` 移除主包指向）或依赖全局；两方向皆可接受，记入结果记录。
-
 ## 结果记录
 
 | 项目 | 状态 |
@@ -81,14 +71,13 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 | memtrace 扩展注入 | ☐ 通过 ☐ 失败 |
 | 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用 |
 | 新项目 bootstrap 清单核对（4 项） | ☐ 通过 ☐ 失败 ☐ 不适用 |
-| 双源并存检查（含回退记录） | ☐ 通过 ☐ 失败 ☐ 不适用 |
 
 ## 故障排查
 
-1. `skills.customDirectories` 路径是否为设备克隆位置
+1. 待验证目录根是否存在 `.omp/skills/`（OMP 项目级自动发现的唯一技能来源）
 2. SKILL.md 的 frontmatter 格式是否正确
 3. `agents/openai.yaml` 是否存在且格式正确
-4. OMP 版本是否支持自定义 Skill 目录
+4. OMP 版本是否支持项目级 `.omp/` 自动发现
 5. memtrace 报「未找到项目」：项目根执行 `PYTHONPATH=<主包根> python -m memtrace init`
 6. memtrace 扩展无提示：确认 OMP 加载项目 `.omp/extensions/`，且会话 cwd 在含 `.memtrace/` 的项目内
 
