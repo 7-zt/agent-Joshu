@@ -53,7 +53,7 @@ Removing patterns is half the job. Sterile, voiceless writing is just as obvious
 16. **Inline-header lists.** The tell is a bold label and colon that restates the line: "**Performance:** Performance improved...". Convert those to prose. A bold lead-in that ends in a period, names the item, and is followed by genuinely new detail ("**Schema in TypeScript.** Tables live in one file.") is fine, not a tell.
 17. **Title case headings.** Use sentence case.
 18. **Decorative emojis.** Remove from headings and bullets.
-19. **Curly quotes.** Replace with straight quotes.
+19. **Quote overuse.** Use as few quotation marks as possible. Wrapping a metaphor or a loose term in quotes ("hallucinates", "set it and forget it", 所谓"抓手") is an AI tell. Write the metaphor directly: the model hallucinates. Keep quotes for verbatim quotations. Where a quote is truly needed, use straight quotes, not curly ones.
 
 ### Communication artifacts
 
