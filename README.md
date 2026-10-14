@@ -45,37 +45,6 @@
 
 推理优化 × 部署排障方向的个人 Agent Kit。**主包一份克隆，项目一条命令。** 核心理念：证据优先、事实与推断分离、版本敏感断言必须可审计、跨设备零路径耦合。
 
-## 架构
-
-- **主包（本仓库）**：复杂源仓——Skill 库（`.omp/skills/`，OMP 项目级自动发现，与项目侧同构）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` CLI、`memtrace bootstrap` 子命令、OMP 扩展）。git clone 即用，零设备级配置。
-- **项目侧（自含）**：主包根一条命令 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 装入完整工具包——可见的 `agent-joshu/`（模板 + adr + vendored `memtrace/` CLI + VERSION + manifest）+ `.omp/skills/`（9 个 Skill，OMP 自动发现）+ `.omp/extensions/memtrace/`。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+；重跑同命令＝比对更新，项目自有内容永不覆盖。
-- 记录策略：决策随项目 git 走（`agent-joshu/adr/`）；任务过程留本地（`.memtrace/`）。
-
-```text
-主包（源仓，git clone）              每个项目（自含，任意设备含内网机）
-├── .omp/skills/（9 个）─同构复制─►     .omp/skills/（OMP 自动发现）
-├── memtrace/ + 扩展   ──复制─►     agent-joshu/memtrace/ + .omp/extensions/
-├── template/agent-joshu/ ──►       agent-joshu/（adr 骨架 + VERSION + manifest）
-└── .agents/adr/（跨项目决策）      AGENTS.md / .gitignore（标记区块并入）
-                                    .memtrace/（任务过程，本地 gitignore）
-```
-
-### 三个「agent-joshu」是什么关系
-
-这个名字出现在三个地方，指三种不同的东西，初见容易误以为存在嵌套依赖：
-
-| 位置 | 角色 |
-| --- | --- |
-| 本仓库 `agent-Joshu` | 工具包源码仓——克隆它只为取货（bootstrap）与维护 |
-| 主仓内 `template/agent-joshu/` | 出厂模板：空的项目上下文骨架（ADR 目录＋VERSION），仅作 bootstrap 的复制源，主仓自己不使用 |
-| 项目内 `agent-joshu/` | bootstrap 的产物：模板骨架＋vendored `memtrace/` CLI＋项目自己积累的决策 |
-
-三点澄清：
-
-- **克隆是安装介质，不是项目的一部分。** bootstrap 完成后项目已自含全部能力，删掉克隆不影响日常使用——内网机上没有任何克隆，仅凭项目本身即可工作。
-- **克隆建议放项目外、全局一份**，服务所有项目（在克隆内 `PYTHONPATH=. python -m memtrace bootstrap <任意项目路径>`）。若放在项目内且该项目有 git 仓库，请将其加入该项目 `.gitignore`，避免整套源码重复进入项目 git（无 git 项目无此需求）。
-- **两套 ADR 互不嵌套**：主仓决策在根 `.agents/adr/`（跨项目通用）；项目决策在项目 `agent-joshu/adr/`（仅属该项目），模板里的 adr/ 只是空骨架，bootstrap 更新时项目长出的内容永不覆盖。
-
 ## 目录
 
 ```
@@ -93,46 +62,6 @@
 ├── .memtrace-archive/   旧任务只读归档（本地，不进 git）
 └── .omp/                skills/（9 个 Skill，OMP 项目级自动发现）+ extensions/memtrace/
 ```
-
-## 快速开始
-
-前置提醒：OMP 已安装并可用；Python 3.10+（memtrace CLI 需要）。新机器零安装——克隆本仓库即用（技能在 `.omp/skills/`，OMP 项目级自动发现）；安装细节以 [template/README.md](./template/README.md) 为准，本节只给关键步骤与验证点。
-
-### 路径 1：新项目接入（bootstrap 一条命令）
-
-1. **安装**（主包根执行，`<目标项目路径>` 替换为实际路径；纯本地复制，零网络，`--dry-run` 可先预览）：
-
-   ```bash
-   # bash
-   PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>
-   ```
-
-   ```powershell
-   # PowerShell
-   $env:PYTHONPATH="."; python -m memtrace bootstrap <目标项目路径>
-   ```
-
-   预期：报告模板、Skills（9 个）、memtrace、扩展四组新增计数与冲突数（首次应为「冲突 0」）；项目根出现 `agent-joshu/`、`.omp/`、`.agents/memtrace_config.toml`、`.memtrace/`，并自动并入根 `AGENTS.md` 标记区块与 `.gitignore` 追加。
-   注：主仓克隆建议放项目外（三个 agent-joshu 的关系见「架构」节）；放项目内时将其加入项目 `.gitignore`。
-2. **验证**：项目根开新 OMP 会话。
-   预期：出现「memtrace 任务记录已加载」（无任务时安静）；有 git 仓库时 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`，`.memtrace/` 被忽略（无 git 项目跳过本判据，memtrace 提示照常适用）。
-3. **更新**：主包组件更新后重跑同一条命令＝比对更新；项目自有内容（adr、已并入段落）永不覆盖，你改过的 kit 文件写同名 `.new` 由你决定。
-
-### 路径 2：30 秒体验 memtrace
-
-在主包根或任一 bootstrap 过的项目根执行（bash 形式；PowerShell 用 `$env:PYTHONPATH` 写法）：主包根用 `PYTHONPATH=.`，bootstrap 过的项目用 `PYTHONPATH=<项目>/agent-joshu`。
-
-```bash
-PYTHONPATH=. python -m memtrace create "第一个任务"
-PYTHONPATH=. python -m memtrace log 2026-09-22-01 "开个头" --actor user
-PYTHONPATH=. python -m memtrace read 2026-09-22-01
-```
-
-预期：
-
-- `create` 输出任务摘要（目录名、id、`status: planning`、path 指向 `.memtrace/YYYY/MM/NN--slug/`）
-- `log` 输出 `已追加 1 条（actor=user）→ …/wal/YYYY-MM-DD.md`
-- `read` 回显同一任务的元数据、TASK.md 预览与 WAL 文件列表（看内容用 `--wal`）；任务引用可用完整目录名、短序号（如 `22-01`）、纯 slug 或 id 前缀
 
 ## Skill 库
 
@@ -171,7 +100,7 @@ PYTHONPATH=. python -m memtrace read 2026-09-22-01
 
 ## 来源与致谢
 
-主要的通用 Skill 与部分工作流思路来自 [ruokee-agent-kit](https://github.com/ruokee/ruokee-agent-kit)，上游采用 MIT License。本仓库在此基础上加入 `inference-ops`、`unslop`、主包与项目侧双层结构、ADR、模板、证据规范和验收脚本。第三方版权与许可文本见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
+感谢 [ruokee-agent-kit](https://github.com/ruokee/ruokee-agent-kit)（MIT License），本项目的通用 Skill 与工作流思路以其为起点。第三方版权与许可文本见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
 
 ## 许可证
 
