@@ -16,6 +16,7 @@ Skills 位于项目 `.omp/skills/`，由 OMP 项目级自动发现。对话中�
 | deep-research | 自动 | 深度调研、需要来源交叉验证的调研报告 |
 | unslop | 自动 | 撰写或改写任何面向用户的文本（去 AI 痕迹） |
 | memtrace | 自动 | 任务过程记录：建任务、阶段性 log、接手任务读上下文、检索历史 |
+| summarizer | 仅用户显式 `/skill:summarizer` | 会话蒸馏 Q&A 知识库：扫描本项目会话，把知识性问答追加进项目根 QA.md |
 
 ## 证据纪律（所有任务的底线）
 

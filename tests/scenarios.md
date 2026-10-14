@@ -138,7 +138,7 @@ Agent 提出：「建议重建容器（L2），是否执行？」
 ```
 
 **预期行为**：
-- ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION + bootstrap-manifest.json + memtrace/ 包）、.omp/skills/ 8 个 Skill、.omp/extensions/memtrace/、.agents/memtrace_config.toml、.memtrace/
+- ✓ 项目根出现 agent-joshu/（adr 生命周期目录 + README + VERSION + bootstrap-manifest.json + memtrace/ 包）、.omp/skills/ 9 个 Skill、.omp/extensions/memtrace/、.agents/memtrace_config.toml、.memtrace/
 - ✓ 有 git 仓库时：git status 只见 agent-joshu/、.omp/、.agents/、AGENTS.md 与 .gitignore，`.memtrace/` 被忽略（过程本地化）；无 git 项目跳过本判据（完全支持场景），bootstrap 照常成功
 - ✓ 全程零网络调用
 - ✓ 在项目目录重跑触发矩阵全过；OMP 新会话出现 memtrace 加载提示
@@ -189,3 +189,36 @@ Agent 提出：「建议重建容器（L2），是否执行？」
 - ✓ AI 用 `memtrace read <任务> --wal --full` 拉详情后接续，不重问已知决策
 - ✓ 若最近 WAL 显示验证未通过，先处理该阻塞
 - ✗ 不应凭空总结任务历史而不读 WAL
+
+## summarizer 场景
+
+### 场景 13：会话蒸馏追加进 QA.md
+
+**输入**：
+```
+用户（学习型项目）：「/skill:summarizer」整理本项目会话里的知识问答
+上下文：项目根尚无 QA.md；本项目有 omp/claude 会话，含知识性问答与纯任务操作
+```
+
+**预期行为**：
+- ✓ 运行 `extract.py new` 列出本项目会话，`show` 逐会话导出人话对话（工具调用/thinking 已剥离）
+- ✓ 首次创建 QA.md，写入三五行的文件头，条目按会话发生时间排序
+- ✓ 只收知识性问答；纯任务操作不入选；「用户复述理解被确认/纠正」优先，误解对照写进正文
+- ✓ 条目格式为 `## YYYY-MM-DD · <agent> · <问句作标题>`，末尾附来源行，正文自包含
+- ✓ 追加后运行 `extract.py done` 提交指纹；报告扫描数、新增数、修正数
+- ✗ 不应改写已有条目正文；纠错只加标记加后补
+- ✗ 不应在非显式调用时运行（隐式信号不触发）
+
+### 场景 14：幂等与增量
+
+**输入**：
+```
+用户：连跑两次「/skill:summarizer」
+上下文：首次已生成 QA.md 并 done 提交指纹
+```
+
+**预期行为**：
+- ✓ 第二次 `extract.py new` 无输出，报告「无新会话」，QA.md 未改动
+- ✓ 长会话被续写（size/mtime 变化）后该会话重新出现在 `new` 中，按语义去重决定是否新增条目
+- ✗ 不应重复追加同一问题（语义相同即算重）
+- ✗ 不应重写或删除既有条目

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Summarizer"
+  short_description: "把会话里的知识问答蒸馏成项目根 QA.md 的复习条目"
+  default_prompt: "Use $summarizer to scan this project's omp/claude/codex sessions, distill the knowledge Q&A into new append-only entries in the project-root QA.md, and mark any corrected older entries."
+policy:
+  allow_implicit_invocation: false

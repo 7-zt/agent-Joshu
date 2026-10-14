@@ -9,11 +9,11 @@
 
 ## 第 1 步：Skill 被发现
 
-在待验证目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 8 个：
+在待验证目录开新会话，输入 `/skills` 或查看 Skill 列表，应看到全部 9 个：
 
-inference-ops、grill-me、architect、python-engineering、code-quality、deep-research、unslop、memtrace
+inference-ops、grill-me、architect、python-engineering、code-quality、deep-research、unslop、memtrace、summarizer
 
-**未显示时**：确认目录根 `.omp/skills/` 存在且含 8 个 Skill 目录；查看 OMP 日志加载错误。
+**未显示时**：确认目录根 `.omp/skills/` 存在且含 9 个 Skill 目录；查看 OMP 日志加载错误。
 
 ## 第 2 步：正向触发矩阵（每个 Skill 都试一遍）
 
@@ -27,6 +27,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 | 6 | deep-research | 自动 | 「深度调研 X，需要来源交叉验证」 | 自动加载 deep-research |
 | 7 | unslop | 自动 | 「帮我改写这段报告，去掉 AI 腔」 | 自动加载 unslop |
 | 8 | memtrace | 自动 | 「帮我把这个跨会话任务记到 memtrace，先建任务再写第一条阶段记录」 | 自动加载 memtrace，用 create/log 完成 |
+| 9 | summarizer | 显式 | `/skill:summarizer` | 扫描本项目会话，把知识性问答追加进项目根 QA.md |
 
 **自动触发未生效时**：检查对应 SKILL.md frontmatter 无残留 `disable-model-invocation: true`；`agents/openai.yaml` 的 `allow_implicit_invocation: true`。
 
@@ -36,8 +37,9 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 | --- | --- | --- |
 | inference-ops | 普通对话提出推理排障话题（不用 `/skill:`） | 不自动进入 inference-ops 流程 |
 | grill-me | 「我有个模糊的想法…」（不用 `/skill:grill-me`） | 不自动进入盘问式交互 |
+| summarizer | 「帮我复习一下这段知识/整理成问答」（不用 `/skill:summarizer`） | 不自动扫描会话、不改动 QA.md |
 
-**负向失败时**：检查这两个 Skill 的 `disable-model-invocation: true` 是否仍在。
+**负向失败时**：检查这三个 Skill 的 `disable-model-invocation: true` 是否仍在。
 
 ## 第 4 步：Skill 内部链接与自包含
 
@@ -53,7 +55,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 
 在主包仓库根执行 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 后，逐项核对：
 
-1. **清单核对**：项目内存在 `agent-joshu/`（含 `memtrace/` 包、`VERSION`、`bootstrap-manifest.json`、`adr/` 骨架）、`.omp/skills/` 下 8 个 Skill 目录、`.omp/extensions/memtrace/`（index.ts）、`.agents/memtrace_config.toml`、`.memtrace/`。
+1. **清单核对**：项目内存在 `agent-joshu/`（含 `memtrace/` 包、`VERSION`、`bootstrap-manifest.json`、`adr/` 骨架）、`.omp/skills/` 下 9 个 Skill 目录、`.omp/extensions/memtrace/`（index.ts）、`.agents/memtrace_config.toml`、`.memtrace/`。
 2. **git 状态**（有 git 仓库时检查；无 git 项目跳过本项，属完全支持场景）：项目根 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`；`.memtrace/` 被忽略（过程本地化生效）。
 3. **AGENTS.md 并入**：根 `AGENTS.md` 含 agent-joshu 标记区块（agents-rules.md 全文）。
 4. 然后在项目目录重跑第 1–3 步与第 5 步（此时技能来自项目 `.omp/skills/`，memtrace 注入应出现）。
@@ -62,9 +64,9 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 
 | 项目 | 状态 |
 | --- | --- |
-| 8 个 Skill 列表显示 | ☐ 通过 ☐ 失败 |
-| 正向矩阵 1–8 全过 | ☐ 通过 ☐ 失败 |
-| 负向检查（2 项） | ☐ 通过 ☐ 失败 |
+| 9 个 Skill 列表显示 | ☐ 通过 ☐ 失败 |
+| 正向矩阵 1–9 全过 | ☐ 通过 ☐ 失败 |
+| 负向检查（3 项） | ☐ 通过 ☐ 失败 |
 | 内部链接正常 | ☐ 通过 ☐ 失败 |
 | Skill 可独立使用 | ☐ 通过 ☐ 失败 |
 | memtrace CLI 可用 | ☐ 通过 ☐ 失败 |

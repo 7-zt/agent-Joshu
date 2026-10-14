@@ -24,7 +24,7 @@ $env:PYTHONPATH="."; python -m memtrace bootstrap <目标项目路径>
 bootstrap 做的事（纯本地复制，零网络）：
 
 1. 复制 `template/agent-joshu/` → 目标 `agent-joshu/`（adr 骨架、VERSION、README）。
-2. 复制全部 8 个 Skill → 目标 `.omp/skills/`（不要某技能时加 `--skills <逗号分隔子集>`）。
+2. 复制全部 9 个 Skill → 目标 `.omp/skills/`（不要某技能时加 `--skills <逗号分隔子集>`）。
 3. 复制 `memtrace/` 包 → 目标 `agent-joshu/memtrace/`（项目内 CLI：`PYTHONPATH=<项目>/agent-joshu python -m memtrace`）。
 4. 复制 `.omp/extensions/memtrace/` → 目标 `.omp/extensions/memtrace/`（OMP 自动加载，优先调用项目内 CLI）。
 5. 执行 `memtrace init`（`.agents/memtrace_config.toml` + `.memtrace/`）。

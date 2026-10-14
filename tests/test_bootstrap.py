@@ -33,7 +33,7 @@ class BootstrapTests(unittest.TestCase):
             self.assertTrue((target / ".omp" / "extensions" / "memtrace" / "index.ts").is_file())
             self.assertEqual(
                 len(list((target / ".omp" / "skills").iterdir())),
-                8,
+                9,
             )
             self.assertTrue((target / ".agents" / "memtrace_config.toml").is_file())
             self.assertTrue((target / ".memtrace").is_dir())

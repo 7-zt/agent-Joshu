@@ -48,12 +48,12 @@
 ## 架构
 
 - **主包（本仓库）**：复杂源仓——Skill 库（`.omp/skills/`，OMP 项目级自动发现，与项目侧同构）+ 跨项目决策与经验（ADR）+ 项目上下文模板（`template/`）+ 代码组件（`memtrace/` CLI、`memtrace bootstrap` 子命令、OMP 扩展）。git clone 即用，零设备级配置。
-- **项目侧（自含）**：主包根一条命令 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 装入完整工具包——可见的 `agent-joshu/`（模板 + adr + vendored `memtrace/` CLI + VERSION + manifest）+ `.omp/skills/`（8 个 Skill，OMP 自动发现）+ `.omp/extensions/memtrace/`。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+；重跑同命令＝比对更新，项目自有内容永不覆盖。
+- **项目侧（自含）**：主包根一条命令 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 装入完整工具包——可见的 `agent-joshu/`（模板 + adr + vendored `memtrace/` CLI + VERSION + manifest）+ `.omp/skills/`（9 个 Skill，OMP 自动发现）+ `.omp/extensions/memtrace/`。项目 clone 到任意设备（含内网机）即得全部能力，只需该设备装有 OMP + Python 3.10+；重跑同命令＝比对更新，项目自有内容永不覆盖。
 - 记录策略：决策随项目 git 走（`agent-joshu/adr/`）；任务过程留本地（`.memtrace/`）。
 
 ```text
 主包（源仓，git clone）              每个项目（自含，任意设备含内网机）
-├── .omp/skills/（8 个）─同构复制─►     .omp/skills/（OMP 自动发现）
+├── .omp/skills/（9 个）─同构复制─►     .omp/skills/（OMP 自动发现）
 ├── memtrace/ + 扩展   ──复制─►     agent-joshu/memtrace/ + .omp/extensions/
 ├── template/agent-joshu/ ──►       agent-joshu/（adr 骨架 + VERSION + manifest）
 └── .agents/adr/（跨项目决策）      AGENTS.md / .gitignore（标记区块并入）
@@ -91,7 +91,7 @@
 ├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
 ├── .memtrace/           任务过程（memtrace 数据，本地，不进 git）
 ├── .memtrace-archive/   旧任务只读归档（本地，不进 git）
-└── .omp/                skills/（8 个 Skill，OMP 项目级自动发现）+ extensions/memtrace/
+└── .omp/                skills/（9 个 Skill，OMP 项目级自动发现）+ extensions/memtrace/
 ```
 
 ## 快速开始
@@ -112,7 +112,7 @@
    $env:PYTHONPATH="."; python -m memtrace bootstrap <目标项目路径>
    ```
 
-   预期：报告模板、Skills（8 个）、memtrace、扩展四组新增计数与冲突数（首次应为「冲突 0」）；项目根出现 `agent-joshu/`、`.omp/`、`.agents/memtrace_config.toml`、`.memtrace/`，并自动并入根 `AGENTS.md` 标记区块与 `.gitignore` 追加。
+   预期：报告模板、Skills（9 个）、memtrace、扩展四组新增计数与冲突数（首次应为「冲突 0」）；项目根出现 `agent-joshu/`、`.omp/`、`.agents/memtrace_config.toml`、`.memtrace/`，并自动并入根 `AGENTS.md` 标记区块与 `.gitignore` 追加。
    注：主仓克隆建议放项目外（三个 agent-joshu 的关系见「架构」节）；放项目内时将其加入项目 `.gitignore`。
 2. **验证**：项目根开新 OMP 会话。
    预期：出现「memtrace 任务记录已加载」（无任务时安静）；有 git 仓库时 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`，`.memtrace/` 被忽略（无 git 项目跳过本判据，memtrace 提示照常适用）。
@@ -146,6 +146,7 @@ PYTHONPATH=. python -m memtrace read 2026-09-22-01
 | deep-research | 自动 | 深度调研：来源采集、交叉验证、论断边界 |
 | unslop | 自动 | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」） |
 | memtrace | 自动 | 任务过程记录：create/log/read/search/update，阶段性 WAL（变更/推翻/验证/用户纠正） |
+| summarizer | 用户显式 | 会话蒸馏 Q&A：扫描本项目 omp/claude/codex 会话，知识性问答按时间追加进项目根 QA.md |
 
 ## 多代理闭环（herdr 可用时）
 
