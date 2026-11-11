@@ -56,7 +56,6 @@
 ├── src/memtrace/        memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
-├── omp/                 prompts/（可复用模式索引 + 独立 prompt）
 ├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
 ├── .memtrace/           任务过程（memtrace 数据，本地，不进 git）
 ├── .memtrace-archive/   旧任务只读归档（本地，不进 git）
@@ -84,7 +83,7 @@
   → claude（study:p2）：按 Skill 设计方案/报告
   → codex（study:p3）：独立验证（只读，PASS/FAIL + 证据 + 必须修正项）
   → omp（study:p1）：修正落地执行（L2/L3 命令另行授权）
-  → 产出归档（reports/ 调研目录）；可复用模式沉淀 omp/prompts/
+  → 产出归档（reports/ 调研目录）
 ```
 
 - 前置探测：`test "$HERDR_ENV" = 1`；herdr 不可用时单代理照常。

@@ -51,7 +51,7 @@ Skill frontmatter 标识与文件名用英文；正文用中文；首次出现�
 - `agents/openai.yaml` 在 Skill 需要 OpenAI 展示信息或触发策略时创建；用户显式触发型 Skill 必须提供该文件。文件存在时必须通过 YAML 解析。
 - Skill 内部文件引用、书面路径引用、执行前置规则不得依赖组件目录外文件（`../` 跨 Skill 引用、兄弟 Skill 名引用、「调用 XX Skill」「见 YY/references/ZZ」类指令都禁止）。
 - 必要的最小规则复制进组件内，不复制整份文档。例：reporting 参考自带环境字段采集示例，不依赖其他参考文档。
-- 组合用法（设计→验证→执行循环，Skill 间协作）只在工作区级 README 或 omp/prompts 说明，不写入组件正文。
+- 组合用法（设计→验证→执行循环，Skill 间协作）只在工作区级 README 说明，不写入组件正文。
 - herdr 启动子代理时，工作目录必须是本仓库根（以当前设备上的克隆位置为准，勿写死绝对路径），确保加载本 AGENTS.md。
 
 ## 证据纪律（所有任务的底线）
@@ -72,7 +72,6 @@ Skill frontmatter 标识与文件名用英文；正文用中文；首次出现�
 - 长期决定：`.agents/adr/`（生命周期见其 README；单用户由用户当次明确确认）。
 - 问题报告：`reports/YYYY-MM-DD-NN-theme.md`（事实-only，见 inference-ops 的 reporting 参考）。主包自身维护的问题放这里；项目内的问题归项目 `agent-joshu/reports/`。
 - 调研报告与来源快照：调研任务自建目录，快照存 `sources/` 子目录。
-- 可复用 prompt：`omp/prompts/`（写入需用户确认）。
 - 任务过程（memtrace 任务、WAL、任务材料目录，位于 `.memtrace/`）属过程状态，留在本地，不进 git。旧任务只读归档于 `.memtrace-archive/`，同样不进 git。
 
 ## memtrace 集成（任务过程记录）

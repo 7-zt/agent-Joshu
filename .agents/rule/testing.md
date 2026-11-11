@@ -12,14 +12,6 @@
 
 测试边界确定后，断言只围绕该边界展开。测试目标视为黑盒。
 
-## Runtime 专属偏好
-
-- 不测试 `servio` 的 Feature、astx 或 settings 实现。这些代码已内化到 `servio_sglang.patch`，测试目标是替换后的 runtime 行为，不是内部模型本身。
-- 不测试 settings。默认值、字段校验、YAML/TOML 来源和环境变量优先级由静态类型和人工审查覆盖。行为测试直接构造明确的 settings 对象。
-- 测试 feature 或 astx 时，从插件入口或功能对外效果出发，使用最小的 `Feature` 或 `AstxFeature` 声明，断言运行时行为变化。不要为 feature 发现、依赖解析、执行器或 astx 变换器单独建立测试套件。
-- 不新建 `tests/patch/`。现有测试按领域放在 `tests/<domain>/`。
-- 迁移测试时只改导入和必要 fixture 路径，不因内部实现变化重写断言。
-
 ## 组织
 
 - 目录按测试层级和领域组织：`tests/<domain>/test_*.py`。
@@ -62,10 +54,10 @@ fixture 提供可复用的基础对象，例如默认上下文、默认配置、
 
 ## 检查
 
-提交前由 `git commit` hooks 运行 pytest。需要单独复现时使用：
+需要单独复现时使用：
 
 ```bash
-uv run --no-sync pytest -q
+python -m pytest tests/ -q
 ```
 
 测试失败时先确认断言是否绑定实现细节。测试依赖未确认的内部行为时，按外部行为调整测试，不改变对外行为来迁就测试。

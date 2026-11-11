@@ -11,7 +11,7 @@
 
 禁止使用 `codex/`、`claude/`、`agent/` 等工具名作为前缀。禁止直接在 `main` 上修改。
 
-本仓库禁止使用 Git worktree，包括 `servio/` subtree 内部。
+本仓库禁止使用 Git worktree。
 
 ## 提交
 
@@ -32,17 +32,8 @@
 - body 必须存在，必须是顶格无序列表，不允许缩进、空行和非列表行。
 - footer 可选，与 body 之间空一行，使用 Git trailer 风格。
 - GitLab MR 合并生成的 squash 提交例外：消息为标题、空行、`Refs: <project>!N`，没有 body。
-- 提交信息由仓库根目录 `.gitlint` 校验；`gitlint-core` 由 `uv sync` 安装。
 
 `amend` 只允许修改提交信息，不允许补充或替换已提交的文件。需要修正内容时新增提交，最终用 squash merge 收敛。
-
-## 检查
-
-开发完成后的第一动作是 `git commit`，让 pre-commit 和 commit-msg hooks 执行完整检查。不要先用 `make check` 或零散检查替代 hooks。
-
-hook 报具体错误时，才运行 `make check USE_COLORS=0` 或更小范围命令定位。hook 自动修复 `end-of-file-fixer`、`trailing-whitespace`、`ruff check --fix`、`ruff format` 后，确认变更属于当前任务，重新 `git add` 和 `git commit`。
-
-依赖变更使用 `uv add`、`uv remove` 和 `uv lock`。禁止手工编辑 `uv.lock`。
 
 ## 合并
 
@@ -52,19 +43,9 @@ hook 报具体错误时，才运行 `make check USE_COLORS=0` 或更小范围命
 
 合并前必须取得用户对分支内容的审查确认和明确授权。用户说「提交」默认指提交到任务分支，不代表授权合并或推送。
 
-`servio/main` 的 vendor 同步使用 non-squash merge，按 subtree 流程执行。除此之外，`main` 保持线性。
+`main` 保持线性。
 
 tag 只允许打在 `main` 上。
-
-## Subtree
-
-`servio/` 是上游仓库的 whole-repo non-squash subtree。
-
-- 从上游同步：`make servio-sync SERVIO_REF=main USE_COLORS=0`。
-- 临时验证上游分支或提交：`make servio-checkout SERVIO_REF=<branch-or-commit> USE_COLORS=0`。
-- 反向回流共享改动：`make servio-export SERVIO_EXPORT_BRANCH=<branch> USE_COLORS=0`。
-
-`servio/` 只作上游参考，`servio` 共享包不作为 workspace 依赖。runtime 的 feature、astx 和通知传输都由本仓库维护；`portal` 作为镜像部署组件保留在 workspace 与依赖中，runtime 代码不导入它。
 
 ## 任务材料
 

@@ -4,7 +4,6 @@
 
 - Python 3.12+，使用 `type` 别名和 PEP 695 泛型语法。
 - 行宽 120，使用 ruff 检查和格式化。
-- 使用 `uv run --no-sync` 执行工具，禁止直接运行系统 `python`。
 - 异步操作使用 anyio。
 - 不使用 `from __future__ import annotations`。需要前向引用时使用 `TYPE_CHECKING` 和字符串字面量。
 - 禁止相对导入。
@@ -30,8 +29,6 @@
 ## 导入
 
 - 标准库、第三方、本仓库模块分组，组间空一行，由 ruff 排序。
-- patch 公共符号统一从 `servio_sglang.patch` 导入；patch 私有实现在 `patch/` 内部使用。
-- runtime 代码导入 `servio_sglang` 与第三方包，通知由 `servio_sglang.sentinel` 发送。
 - 循环依赖先通过归属调整、合并或上层编排消除。局部导入只用于真实加载时机，例如避免导入即改写上游对象；它不作为架构环的豁免。
 
 ## 函数与类
@@ -47,7 +44,7 @@
 
 - 配置模型放在 `settings.py` 或所属领域的 `config.py`。
 - 配置字段写 `Field(description=...)`，说明单位和默认值含义。
-- 配置读取集中在 `load_settings()`；业务代码不直接读环境变量。发送时的部署信息等进程外事实属于运行时采集，由所属领域显式读取，不缓存进配置快照。
+- 配置读取集中在 `load_settings()`；业务代码不直接读环境变量。
 - 不测试配置模型默认值和来源优先级。
 
 ## 文档字符串
