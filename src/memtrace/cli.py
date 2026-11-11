@@ -4,17 +4,14 @@
 （Python 3.10+，路径全用 pathlib，文本统一 UTF-8 + LF）。
 """
 
-from __future__ import annotations
-
 import argparse
 import sys
 from pathlib import Path
 
-from . import __version__
-from . import bootstrap as bootstrap_mod
-from . import config as config_mod
-from . import search as search_mod
-from . import store, wal
+from memtrace import __version__, store, wal
+from memtrace import bootstrap as bootstrap_mod
+from memtrace import config as config_mod
+from memtrace import search as search_mod
 
 
 def _print(text: str) -> None:
@@ -29,6 +26,7 @@ def _relative_display(path: Path, root: Path) -> str:
 
 
 def init_project(root: Path) -> int:
+    """在项目根初始化：写稀疏配置与任务根目录；已初始化则幂等返回。"""
     root = root.resolve()
     path = config_mod.config_path(root)
     if path.is_file():
@@ -53,10 +51,12 @@ def init_project(root: Path) -> int:
 
 
 def cmd_init(args: argparse.Namespace) -> int:
+    """init 子命令：在当前目录初始化项目。"""
     return init_project(Path.cwd())
 
 
 def cmd_bootstrap(args: argparse.Namespace) -> int:
+    """bootstrap 子命令：把主包复制为目标项目内的自含工具包。"""
     return bootstrap_mod.bootstrap_project(
         args.target,
         skills_arg=args.skills,
@@ -68,6 +68,7 @@ def cmd_bootstrap(args: argparse.Namespace) -> int:
 
 
 def cmd_create(args: argparse.Namespace) -> int:
+    """create 子命令：创建任务目录、元数据与 TASK.md。"""
     project_root, cfg = store.require_project(Path.cwd())
     task = store.create_task(
         project_root,
@@ -78,11 +79,12 @@ def cmd_create(args: argparse.Namespace) -> int:
         creation_policy="permissive" if args.permissive else None,
     )
     _print(store.render_task_summary(task, project_root, cfg))
-    _print(f"任务已创建。下一步：编辑 TASK.md，用 memtrace log 记第一条 WAL。")
+    _print("任务已创建。下一步：编辑 TASK.md，用 memtrace log 记第一条 WAL。")
     return 0
 
 
 def cmd_log(args: argparse.Namespace) -> int:
+    """log 子命令：向任务追加一条 WAL 条目。"""
     project_root, cfg = store.require_project(Path.cwd())
     task = store.find_task(project_root, cfg, args.task)
     body = wal.semantic_body(
@@ -108,6 +110,7 @@ def _is_relative(path: Path, root: Path) -> bool:
 
 
 def cmd_read(args: argparse.Namespace) -> int:
+    """read 子命令：读任务摘要、TASK.md 与 WAL。"""
     project_root, cfg = store.require_project(Path.cwd())
     if args.list:
         tasks = store.load_tasks(project_root, cfg)
@@ -127,7 +130,7 @@ def cmd_read(args: argparse.Namespace) -> int:
             _print(text.rstrip())
         else:
             head = "\n".join(text.splitlines()[: int(args.head)])
-            _print("\n----- TASK.md（前 {} 行）-----".format(int(args.head)))
+            _print(f"\n----- TASK.md（前 {int(args.head)} 行）-----")
             _print(head)
             _print("（memtrace read <任务> --full 看全文）")
     if args.wal:
@@ -149,6 +152,7 @@ def cmd_read(args: argparse.Namespace) -> int:
 
 
 def cmd_search(args: argparse.Namespace) -> int:
+    """search 子命令：跨任务全文检索。"""
     project_root, cfg = store.require_project(Path.cwd())
     try:
         hits = search_mod.search_project(
@@ -180,6 +184,7 @@ def cmd_search(args: argparse.Namespace) -> int:
 
 
 def cmd_update(args: argparse.Namespace) -> int:
+    """update 子命令：任务状态转换并按需记 WAL。"""
     project_root, cfg = store.require_project(Path.cwd())
     task = store.find_task(project_root, cfg, args.task)
     new_status = args.status
@@ -197,6 +202,7 @@ def cmd_update(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """构建 memtrace 命令行解析器。"""
     parser = argparse.ArgumentParser(
         prog="memtrace",
         description="结构化任务过程记录器（含任务管理）。规格见 grill-memtrace.md v1.0。",
@@ -259,6 +265,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """执行子命令；业务错误退出码 1，参数错误退出码 2。"""
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

@@ -1,22 +1,22 @@
 """把 agent-Joshu 主包复制为项目自含工具包。"""
 
-from __future__ import annotations
-
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
 
-from . import bootstrap_files as files
-from . import config as config_mod
-from . import store
-from .timeutil import rfc3339_now
+from memtrace import bootstrap_files as files
+from memtrace import config as config_mod
+from memtrace import store
+from memtrace.timeutil import rfc3339_now
 
 COMPONENT_ORDER = ("模板", "Skills", "memtrace", "OMP 扩展")
 
 
 @dataclass
 class ComponentStats:
+    """单个组件在本次 bootstrap 中的同步统计。"""
+
     directories: int
     files: int = 0
     added: int = 0
@@ -27,6 +27,8 @@ class ComponentStats:
 
 @dataclass
 class BootstrapReport:
+    """bootstrap 运行报告：各组件统计与按动作分组的路径列表。"""
+
     stats: dict[str, ComponentStats]
     installed: list[str] = field(default_factory=list)
     updated: list[str] = field(default_factory=list)
@@ -39,23 +41,21 @@ class BootstrapReport:
 
 
 def kit_root() -> Path:
-    """按 memtrace 包自身位置定位主包根，不依赖 cwd。"""
-    return Path(__file__).resolve().parent.parent
+    """按包自身位置定位主包根（src/memtrace/ → 仓库根），不依赖 cwd。"""
+    return Path(__file__).resolve().parents[2]
 
 
 def available_skills(root: Path) -> list[str]:
+    """列出主包 .omp/skills/ 下可安装的 Skill 名。"""
     skills_root = root / ".omp" / "skills"
     try:
-        return sorted(
-            path.name
-            for path in skills_root.iterdir()
-            if path.is_dir() and (path / "SKILL.md").is_file()
-        )
+        return sorted(path.name for path in skills_root.iterdir() if path.is_dir() and (path / "SKILL.md").is_file())
     except OSError as exc:
         raise store.MemtraceError("主包 .omp/skills/ 目录不可读") from exc
 
 
 def parse_skills(raw: str | None, valid: list[str]) -> list[str]:
+    """解析 --skills 参数：逗号分隔的有效名子集，缺省全部。"""
     if raw is None:
         return list(valid)
     requested = sorted({name.strip() for name in raw.split(",") if name.strip()})
@@ -63,12 +63,7 @@ def parse_skills(raw: str | None, valid: list[str]) -> list[str]:
         raise ValueError("--skills 至少要包含一个 Skill 名")
     unknown = sorted(set(requested) - set(valid))
     if unknown:
-        raise ValueError(
-            "--skills 含未知名字："
-            + ", ".join(unknown)
-            + "；有效名字："
-            + ", ".join(valid)
-        )
+        raise ValueError("--skills 含未知名字：" + ", ".join(unknown) + "；有效名字：" + ", ".join(valid))
     return requested
 
 
@@ -143,9 +138,7 @@ def bootstrap_project(
 
         current_paths = {source.relative for source in sources}
         report.residual = sorted(
-            relative
-            for relative in previous_files
-            if relative not in current_paths and (target / relative).exists()
+            relative for relative in previous_files if relative not in current_paths and (target / relative).exists()
         )
         report.untouched.extend(files.collect_project_owned(target))
 
@@ -155,9 +148,7 @@ def bootstrap_project(
             git_policy = raw_git_policy
         else:
             git_policy = config_mod.DEFAULT_GIT_POLICY
-            report.notices.append(
-                f"警告：git_policy={raw_git_policy} 无效，按默认 ignore 处理"
-            )
+            report.notices.append(f"警告：git_policy={raw_git_policy} 无效，按默认 ignore 处理")
 
         active_path = ".gitignore"
         gitignore_action = files.merge_gitignore(
@@ -174,8 +165,7 @@ def bootstrap_project(
             report.untouched.append(".gitignore")
         elif gitignore_action == "conflict-track":
             report.untouched.append(
-                ".gitignore（git_policy=track 与现有 .memtrace/ 忽略规则冲突，"
-                "请手动移除该追加块；未自动修改）"
+                ".gitignore（git_policy=track 与现有 .memtrace/ 忽略规则冲突，请手动移除该追加块；未自动修改）"
             )
         elif gitignore_action == "skipped-track":
             verb = "将跳过" if dry_run else "已跳过"
@@ -199,9 +189,7 @@ def bootstrap_project(
                 try:
                     init_result = init_project(target)
                 except Exception as exc:
-                    raise store.MemtraceError(
-                        "memtrace init 失败；kit 内容已就位，可修复后重跑 bootstrap。"
-                    ) from exc
+                    raise store.MemtraceError("memtrace init 失败；kit 内容已就位，可修复后重跑 bootstrap。") from exc
                 if init_result != 0:
                     raise store.MemtraceError(
                         f"memtrace init 失败（退出码 {init_result}）；kit 内容已就位，可修复后重跑 bootstrap。"
@@ -215,11 +203,7 @@ def bootstrap_project(
         }
         previous_state = files.manifest_state(previous_manifest)
         kit_writes = bool(report.installed or report.updated)
-        conflict_writes = (
-            bool(report.conflicts)
-            if dry_run
-            else any(path.endswith(".new") for path in report.written)
-        )
+        conflict_writes = bool(report.conflicts) if dry_run else any(path.endswith(".new") for path in report.written)
         report.manifest_changed = previous_state != manifest_state or kit_writes or conflict_writes
 
         if report.manifest_changed and not dry_run:
@@ -232,9 +216,7 @@ def bootstrap_project(
         raise
     except (OSError, UnicodeError) as exc:
         written = "、".join(report.written) if report.written else "无"
-        raise store.MemtraceError(
-            f"写入失败：{active_path}（{type(exc).__name__}）；本次已写入：{written}"
-        ) from exc
+        raise store.MemtraceError(f"写入失败：{active_path}（{type(exc).__name__}）；本次已写入：{written}") from exc
 
     _print_report(
         report,
@@ -250,14 +232,10 @@ def _validate_target(root: Path, target: Path, target_input: Path) -> None:
     if target == root or root in target.parents:
         raise store.MemtraceError("目标项目不能是主包自身或其子目录")
     if not target.exists() or not target.is_dir():
-        raise store.MemtraceError(
-            f"目标路径不存在或不是目录：{_display_input_path(target_input)}"
-        )
+        raise store.MemtraceError(f"目标路径不存在或不是目录：{_display_input_path(target_input)}")
     agent_dir = target / "agent-joshu"
     if agent_dir.exists() and not (agent_dir / "VERSION").is_file():
-        raise store.MemtraceError(
-            "目标已有 agent-joshu/ 但缺少 VERSION，疑似项目自建目录；请先确认并删除或移走该目录"
-        )
+        raise store.MemtraceError("目标已有 agent-joshu/ 但缺少 VERSION，疑似项目自建目录；请先确认并删除或移走该目录")
 
 
 def _display_input_path(path: Path) -> str:
@@ -288,11 +266,7 @@ def _print_report(
     for notice in report.notices:
         print_line(notice)
     _print_section("已更新（kit 覆盖）", report.updated, print_line)
-    conflict_title = (
-        "冲突预览（将写 .new）"
-        if dry_run
-        else "冲突保留项目版（.new 已写）"
-    )
+    conflict_title = "冲突预览（将写 .new）" if dry_run else "冲突保留项目版（.new 已写）"
     _print_section(conflict_title, report.conflicts, print_line)
     _print_section("主包已删除（项目残留）", report.residual, print_line)
     _print_section("项目自有内容（未触碰）", sorted(set(report.untouched)), print_line)

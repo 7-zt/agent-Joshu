@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import io
 import json
 import tempfile
@@ -8,8 +6,8 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from memtrace import config, store
 from memtrace import cli as cli_mod
+from memtrace import config, store
 from memtrace.cli import main
 
 
@@ -89,9 +87,7 @@ class BootstrapTests(unittest.TestCase):
                 ["architect", "memtrace"],
             )
             self.assertFalse((target / ".agents").exists())
-            manifest = json.loads(
-                (target / "agent-joshu" / "bootstrap-manifest.json").read_text(encoding="utf-8")
-            )
+            manifest = json.loads((target / "agent-joshu" / "bootstrap-manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["skills"], ["architect", "memtrace"])
 
     def test_e1_to_e4(self) -> None:
@@ -137,11 +133,7 @@ class BootstrapTests(unittest.TestCase):
                             encoding="utf-8",
                             newline="\n",
                         )
-                    before = (
-                        (target / ".gitignore").read_bytes()
-                        if (target / ".gitignore").is_file()
-                        else None
-                    )
+                    before = (target / ".gitignore").read_bytes() if (target / ".gitignore").is_file() else None
 
                     code, output, error = self.run_cli("bootstrap", str(target))
 
@@ -246,9 +238,11 @@ class BootstrapTests(unittest.TestCase):
                         return path
 
                     stdout = io.StringIO()
-                    with patch.object(cli_mod.config_mod, "write_config", side_effect=write_config):
-                        with redirect_stdout(stdout):
-                            self.assertEqual(cli_mod.init_project(target), 0)
+                    with (
+                        patch.object(cli_mod.config_mod, "write_config", side_effect=write_config),
+                        redirect_stdout(stdout),
+                    ):
+                        self.assertEqual(cli_mod.init_project(target), 0)
                     self.assertIn(message, stdout.getvalue())
 
                     stdout = io.StringIO()
@@ -269,11 +263,7 @@ class BootstrapTests(unittest.TestCase):
 
     @staticmethod
     def snapshot(root: Path) -> dict[str, bytes]:
-        return {
-            path.relative_to(root).as_posix(): path.read_bytes()
-            for path in root.rglob("*")
-            if path.is_file()
-        }
+        return {path.relative_to(root).as_posix(): path.read_bytes() for path in root.rglob("*") if path.is_file()}
 
 
 class FindTaskTests(unittest.TestCase):

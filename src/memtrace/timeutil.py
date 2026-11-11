@@ -1,7 +1,5 @@
 """时间工具：RFC3339 本地时间戳（带本地时区偏移）。"""
 
-from __future__ import annotations
-
 import time
 
 
@@ -22,6 +20,7 @@ def rfc3339_now() -> str:
 
 
 def today_local() -> str:
+    """本地日期 YYYY-MM-DD。"""
     return time.strftime("%Y-%m-%d", time.localtime())
 
 
