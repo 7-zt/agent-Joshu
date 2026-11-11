@@ -17,27 +17,27 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 
 ## 第 2 步：正向触发矩阵（每个 Skill 都试一遍）
 
-| # | Skill | 触发方式 | 测试输入 | 预期 |
-| --- | --- | --- | --- | --- |
-| 1 | inference-ops | 显式 | `/skill:inference-ops` | 进入模式选择/引导 |
-| 2 | grill-me | 显式 | `/skill:grill-me` | 进入盘问式需求梳理 |
-| 3 | architect | 自动 | 「帮我做这个服务的架构评审和技术选型」 | 自动加载 architect 后作答 |
-| 4 | python-engineering | 自动 | 「评估这段 Python 代码的工程实践：<贴代码>」 | 自动加载 python-engineering |
-| 5 | code-quality | 自动 | 「这段代码有什么质量问题，该怎么重构？」 | 自动加载 code-quality |
-| 6 | deep-research | 自动 | 「深度调研 X，需要来源交叉验证」 | 自动加载 deep-research |
-| 7 | unslop | 自动 | 「帮我改写这段报告，去掉 AI 腔」 | 自动加载 unslop |
-| 8 | memtrace | 自动 | 「帮我把这个跨会话任务记到 memtrace，先建任务再写第一条阶段记录」 | 自动加载 memtrace，用 create/log 完成 |
-| 9 | summarizer | 显式 | `/skill:summarizer` | 扫描本项目会话，把知识性问答追加进项目根 QA.md |
+| #   | Skill              | 触发方式 | 测试输入                                                          | 预期                                           |
+| --- | ------------------ | -------- | ----------------------------------------------------------------- | ---------------------------------------------- |
+| 1   | inference-ops      | 显式     | `/skill:inference-ops`                                            | 进入模式选择/引导                              |
+| 2   | grill-me           | 显式     | `/skill:grill-me`                                                 | 进入盘问式需求梳理                             |
+| 3   | architect          | 自动     | 「帮我做这个服务的架构评审和技术选型」                            | 自动加载 architect 后作答                      |
+| 4   | python-engineering | 自动     | 「评估这段 Python 代码的工程实践：<贴代码>」                      | 自动加载 python-engineering                    |
+| 5   | code-quality       | 自动     | 「这段代码有什么质量问题，该怎么重构？」                          | 自动加载 code-quality                          |
+| 6   | deep-research      | 自动     | 「深度调研 X，需要来源交叉验证」                                  | 自动加载 deep-research                         |
+| 7   | unslop             | 自动     | 「帮我改写这段报告，去掉 AI 腔」                                  | 自动加载 unslop                                |
+| 8   | memtrace           | 自动     | 「帮我把这个跨会话任务记到 memtrace，先建任务再写第一条阶段记录」 | 自动加载 memtrace，用 create/log 完成          |
+| 9   | summarizer         | 显式     | `/skill:summarizer`                                               | 扫描本项目会话，把知识性问答追加进项目根 QA.md |
 
 **自动触发未生效时**：检查对应 SKILL.md frontmatter 无残留 `disable-model-invocation: true`；`agents/openai.yaml` 的 `allow_implicit_invocation: true`。
 
 ## 第 3 步：负向检查（不得隐式触发）
 
-| Skill | 测试输入 | 预期 |
-| --- | --- | --- |
-| inference-ops | 普通对话提出推理排障话题（不用 `/skill:`） | 不自动进入 inference-ops 流程 |
-| grill-me | 「我有个模糊的想法…」（不用 `/skill:grill-me`） | 不自动进入盘问式交互 |
-| summarizer | 「帮我复习一下这段知识/整理成问答」（不用 `/skill:summarizer`） | 不自动扫描会话、不改动 QA.md |
+| Skill         | 测试输入                                                        | 预期                          |
+| ------------- | --------------------------------------------------------------- | ----------------------------- |
+| inference-ops | 普通对话提出推理排障话题（不用 `/skill:`）                      | 不自动进入 inference-ops 流程 |
+| grill-me      | 「我有个模糊的想法…」（不用 `/skill:grill-me`）                 | 不自动进入盘问式交互          |
+| summarizer    | 「帮我复习一下这段知识/整理成问答」（不用 `/skill:summarizer`） | 不自动扫描会话、不改动 QA.md  |
 
 **负向失败时**：检查这三个 Skill 的 `disable-model-invocation: true` 是否仍在。
 
@@ -62,17 +62,17 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 
 ## 结果记录
 
-| 项目 | 状态 |
-| --- | --- |
-| 9 个 Skill 列表显示 | ☐ 通过 ☐ 失败 |
-| 正向矩阵 1–9 全过 | ☐ 通过 ☐ 失败 |
-| 负向检查（3 项） | ☐ 通过 ☐ 失败 |
-| 内部链接正常 | ☐ 通过 ☐ 失败 |
-| Skill 可独立使用 | ☐ 通过 ☐ 失败 |
-| memtrace CLI 可用 | ☐ 通过 ☐ 失败 |
-| memtrace 扩展注入 | ☐ 通过 ☐ 失败 |
-| 新项目 git 状态检查 | ☐ 通过 ☐ 失败 ☐ 不适用（无 git 项目） |
-| 新项目 bootstrap 清单核对（4 项） | ☐ 通过 ☐ 失败 ☐ 不适用 |
+| 项目                              | 状态                                  |
+| --------------------------------- | ------------------------------------- |
+| 9 个 Skill 列表显示               | ☐ 通过 ☐ 失败                         |
+| 正向矩阵 1–9 全过                 | ☐ 通过 ☐ 失败                         |
+| 负向检查（3 项）                  | ☐ 通过 ☐ 失败                         |
+| 内部链接正常                      | ☐ 通过 ☐ 失败                         |
+| Skill 可独立使用                  | ☐ 通过 ☐ 失败                         |
+| memtrace CLI 可用                 | ☐ 通过 ☐ 失败                         |
+| memtrace 扩展注入                 | ☐ 通过 ☐ 失败                         |
+| 新项目 git 状态检查               | ☐ 通过 ☐ 失败 ☐ 不适用（无 git 项目） |
+| 新项目 bootstrap 清单核对（4 项） | ☐ 通过 ☐ 失败 ☐ 不适用                |
 
 ## 故障排查
 

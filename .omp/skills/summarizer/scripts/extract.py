@@ -162,11 +162,7 @@ def cmd_new(project: Path) -> int:
     fingerprints = state.get("fingerprints", {})
     for record in project_sessions(project):
         known = fingerprints.get(record["agent"], {}).get(record["file"])
-        changed = (
-            not known
-            or known.get("size") != record["size"]
-            or known.get("mtime") != record["mtime"]
-        )
+        changed = not known or known.get("size") != record["size"] or known.get("mtime") != record["mtime"]
         if changed:
             print(json.dumps(record, ensure_ascii=False))
     return 0

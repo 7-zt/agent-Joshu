@@ -14,3 +14,7 @@ __pycache__/
 # 任务过程（memtrace 数据本地化；决策进 .agents/adr）
 /.memtrace/
 /.memtrace-archive/
+
+# 工具链缓存
+/.pytest_cache/
+/.ruff_cache/

@@ -6,17 +6,17 @@
 
 Skills 位于项目 `.omp/skills/`，由 OMP 项目级自动发现。对话中出现匹配信号时先读 `skill://<name>` 再作答，不等用户显式 `/skill:` 调用：
 
-| Skill | 触发方式 | 触发信号 |
-| --- | --- | --- |
-| inference-ops | 仅用户显式 `/skill:inference-ops` | 推理系统排障 / 性能优化 |
-| grill-me | 仅用户显式 `/skill:grill-me` | 把不完整想法/计划盘成可执行规格 |
-| architect | 自动 | 架构设计、系统分析、技术选型、架构评审与演进 |
-| python-engineering | 自动 | Python 工程实践：结构、依赖、类型、测试、工具链 |
-| code-quality | 自动 | 代码质量评估、重构、设计原则与模式、测试设计 |
-| deep-research | 自动 | 深度调研、需要来源交叉验证的调研报告 |
-| unslop | 自动 | 撰写或改写任何面向用户的文本（去 AI 痕迹） |
-| memtrace | 自动 | 任务过程记录：建任务、阶段性 log、接手任务读上下文、检索历史 |
-| summarizer | 仅用户显式 `/skill:summarizer` | 会话蒸馏 Q&A 知识库：扫描本项目会话，把知识性问答追加进项目根 QA.md |
+| Skill              | 触发方式                          | 触发信号                                                            |
+| ------------------ | --------------------------------- | ------------------------------------------------------------------- |
+| inference-ops      | 仅用户显式 `/skill:inference-ops` | 推理系统排障 / 性能优化                                             |
+| grill-me           | 仅用户显式 `/skill:grill-me`      | 把不完整想法/计划盘成可执行规格                                     |
+| architect          | 自动                              | 架构设计、系统分析、技术选型、架构评审与演进                        |
+| python-engineering | 自动                              | Python 工程实践：结构、依赖、类型、测试、工具链                     |
+| code-quality       | 自动                              | 代码质量评估、重构、设计原则与模式、测试设计                        |
+| deep-research      | 自动                              | 深度调研、需要来源交叉验证的调研报告                                |
+| unslop             | 自动                              | 撰写或改写任何面向用户的文本（去 AI 痕迹）                          |
+| memtrace           | 自动                              | 任务过程记录：建任务、阶段性 log、接手任务读上下文、检索历史        |
+| summarizer         | 仅用户显式 `/skill:summarizer`    | 会话蒸馏 Q&A 知识库：扫描本项目会话，把知识性问答追加进项目根 QA.md |
 
 ## 证据纪律（所有任务的底线）
 

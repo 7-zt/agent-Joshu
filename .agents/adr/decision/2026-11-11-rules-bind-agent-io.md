@@ -39,3 +39,10 @@
 ## 重审条件
 
 规则目录完成本仓库适配、待修订条目消解后；规则膨胀到需要按领域拆分时；出现 lint 或 hook 等工具化检查能替代模型自觉对照时。
+
+## 变更
+
+### 2026-11-11
+
+规则文件完成部分适配：移除 servio 工具链与实现细节（uv、make、gitlint、pre-commit hooks、Subtree 流程、servio_sglang 导入约定）与 docs/ 分层引用，不存在设施类条目消解。Python 版本与第三方库选择（msgspec、pydantic、anyio）仍按冲突处理条款以待修订状态保留。
+同日后续：按 PR #3 评审落地检查工具链（见 `2026-11-11-dev-check-toolchain`），检查相关规则原文恢复，工具设施类条目由不适用转为适用。

@@ -208,7 +208,7 @@ def bootstrap_project(
 
         if report.manifest_changed and not dry_run:
             active_path = f"agent-joshu/{files.MANIFEST_NAME}"
-            manifest = dict(manifest_state)
+            manifest: dict[str, object] = dict(manifest_state)
             manifest["generated_at"] = rfc3339_now()
             files.write_manifest(manifest_path, manifest)
             report.written.append(active_path)
