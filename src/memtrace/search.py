@@ -1,25 +1,36 @@
 """检索：跨任务的文本搜索（TASK.md、memtrace.toml、WAL、材料 Markdown）。"""
 
-from __future__ import annotations
-
 import re
+from collections.abc import Iterator
 from pathlib import Path
+from typing import TypedDict
 
-from . import config as config_mod
+from memtrace import config as config_mod
+
+
+class SearchHit(TypedDict):
+    """单处命中：相对路径、行号、行文本、上下文与所属任务目录。"""
+
+    path: str
+    line: int
+    text: str
+    context: str
+    task: str
+
 
 _SEARCH_SUFFIXES = {".md", ".toml", ".txt", ".json", ".jsonl", ".yaml", ".yml", ".py", ".ts"}
 
 
 def search_project(
     project_root: Path,
-    cfg: dict,
+    cfg: dict[str, object],
     pattern: str,
     *,
     regex: bool = False,
     ignore_case: bool = True,
     context: int = 0,
     max_hits: int = 200,
-) -> list[dict]:
+) -> list[SearchHit]:
     """在 task_root 全部任务文件中搜 pattern，返回命中列表。"""
     root_dir = config_mod.task_root_dir(project_root, cfg)
     if not root_dir.is_dir():
@@ -33,7 +44,7 @@ def search_project(
         flags = re.IGNORECASE if ignore_case else 0
         matcher = re.compile(re.escape(pattern), flags)
 
-    hits: list[dict] = []
+    hits: list[SearchHit] = []
     for path in _iter_files(root_dir):
         try:
             text = path.read_text(encoding="utf-8")
@@ -45,20 +56,23 @@ def search_project(
             if matcher.search(line):
                 ctx_start = max(0, line_no - 1 - context)
                 ctx_end = min(len(lines), line_no + context)
-                hits.append({
-                    "path": rel,
-                    "line": line_no,
-                    "text": line.strip()[:400],
-                    "context": "\n".join(lines[ctx_start:ctx_end]) if context else "",
-                    # 任务目录 = 路径前三段 YYYY/MM/DD-NN--slug
-                    "task": _task_of(rel),
-                })
+                hits.append(
+                    {
+                        "path": rel,
+                        "line": line_no,
+                        "text": line.strip()[:400],
+                        "context": "\n".join(lines[ctx_start:ctx_end]) if context else "",
+                        # 任务目录 = 路径前三段 YYYY/MM/DD-NN--slug
+                        "task": _task_of(rel),
+                    }
+                )
                 if len(hits) >= max_hits:
                     return hits
     return hits
 
 
-def _iter_files(root: Path):
+def _iter_files(root: Path) -> Iterator[Path]:
+    """递归列出可检索后缀的文件（按路径排序，保证结果稳定）。"""
     for path in sorted(root.rglob("*")):
         if path.is_file() and path.suffix.lower() in _SEARCH_SUFFIXES:
             yield path

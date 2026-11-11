@@ -8,15 +8,13 @@
 - WAL wal/YYYY-MM-DD.md（见 wal.py）
 """
 
-from __future__ import annotations
-
 import os
 import re
 from pathlib import Path
 
-from . import config as config_mod
-from . import uuid7
-from .timeutil import rfc3339_now, today_parts
+from memtrace import config as config_mod
+from memtrace import uuid7
+from memtrace.timeutil import rfc3339_now, today_parts
 
 SCHEMA_VERSION = 1
 STATUSES = ("planning", "open", "closed")
@@ -33,7 +31,9 @@ class MemtraceError(Exception):
 
 
 class Task:
-    def __init__(self, dir_path: Path, meta: dict):
+    """已加载的任务：目录位置与元数据（memtrace.toml 七字段 + 可选 extra）。"""
+
+    def __init__(self, dir_path: Path, meta: dict[str, object]):
         self.dir = dir_path
         self.meta = meta
 
@@ -76,7 +76,7 @@ _META_KEY_ORDER = [
 ]
 
 
-def _format_toml_value(value) -> str:
+def _format_toml_value(value: object) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, int):
@@ -93,7 +93,8 @@ def _format_toml_value(value) -> str:
     return f'"{escaped}"'
 
 
-def dump_meta(meta: dict) -> str:
+def dump_meta(meta: dict[str, object]) -> str:
+    """把任务元数据序列化为 memtrace.toml 文本（键序稳定，保留未知键）。"""
     lines = ["# memtrace 任务元数据（schema v1；生成后可手工补 depends_on/related_to/extra）", ""]
     emitted = set()
     for key in _META_KEY_ORDER:
@@ -108,9 +109,9 @@ def dump_meta(meta: dict) -> str:
     return "\n".join(lines)
 
 
-def parse_task_toml(text: str) -> dict:
+def parse_task_toml(text: str) -> dict[str, object]:
     """解析任务元数据 TOML（顶层键值子集 + [extra] 表）。"""
-    meta: dict = {}
+    meta: dict[str, object] = {}
     in_extra = False
     for raw_line in text.lstrip("\ufeff").splitlines():
         line = raw_line.strip()
@@ -133,9 +134,7 @@ def parse_task_toml(text: str) -> dict:
     return meta
 
 
-def _parse_toml_value(raw: str):
-    from .config import _parse_scalar  # 同一子集解析
-
+def _parse_toml_value(raw: str) -> object:
     value = raw.strip()
     if value.startswith("[") and value.endswith("]"):
         inner = value[1:-1].strip()
@@ -160,8 +159,8 @@ def _parse_toml_value(raw: str):
             buf += ch
         if buf.strip():
             parts.append(buf)
-        return [_parse_scalar(p) for p in parts if p.strip()]
-    return _parse_scalar(value)
+        return [config_mod._parse_scalar(p) for p in parts if p.strip()]
+    return config_mod._parse_scalar(value)
 
 
 # ---------------------------------------------------------------------------
@@ -184,7 +183,8 @@ def find_project_root(start: Path) -> Path | None:
         current = parent
 
 
-def require_project(start: Path) -> tuple[Path, dict]:
+def require_project(start: Path) -> tuple[Path, dict[str, object]]:
+    """定位项目根并加载校验后的配置；未初始化或配置无效时抛 MemtraceError。"""
     root = find_project_root(start)
     if root is None:
         raise MemtraceError(
@@ -208,7 +208,7 @@ def _load_task(task_dir: Path) -> Task | None:
     return Task(task_dir, meta)
 
 
-def _validate_meta(meta: dict, source: Path) -> None:
+def _validate_meta(meta: dict[str, object], source: Path) -> None:
     required = {
         "schema_version",
         "id",
@@ -222,9 +222,7 @@ def _validate_meta(meta: dict, source: Path) -> None:
     if missing:
         raise MemtraceError(f"任务元数据缺少字段（{source}）：{', '.join(missing)}")
     if meta["schema_version"] != SCHEMA_VERSION:
-        raise MemtraceError(
-            f"不支持的 schema_version（{source}）：{meta['schema_version']}，当前支持 {SCHEMA_VERSION}"
-        )
+        raise MemtraceError(f"不支持的 schema_version（{source}）：{meta['schema_version']}，当前支持 {SCHEMA_VERSION}")
     if meta["status"] not in STATUSES:
         raise MemtraceError(f"任务状态无效（{source}）：{meta['status']}")
     for key in ("depends_on", "related_to"):
@@ -232,7 +230,7 @@ def _validate_meta(meta: dict, source: Path) -> None:
             raise MemtraceError(f"任务元数据字段必须是数组（{source}）：{key}")
 
 
-def load_tasks(project_root: Path, cfg: dict) -> list[Task]:
+def load_tasks(project_root: Path, cfg: dict[str, object]) -> list[Task]:
     """全量扫描 task_root 下的任务目录（含子任务目录不递归为独立任务）。"""
     root_dir = config_mod.task_root_dir(project_root, cfg)
     tasks: list[Task] = []
@@ -264,12 +262,7 @@ def find_task(project_root: Path, cfg: dict, ref: str) -> Task:
     for task in tasks:
         dirname = task.dir.name
         rel_posix = task.dir.relative_to(config_mod.task_root_dir(project_root, cfg)).as_posix()
-        if (
-            ref == dirname
-            or ref == rel_posix
-            or dirname.startswith(ref + "--")
-            or dirname.endswith("--" + ref)
-        ):
+        if ref == dirname or ref == rel_posix or dirname.startswith(ref + "--") or dirname.endswith("--" + ref):
             by_dir.append(task)
     if len(by_dir) == 1:
         return by_dir[0]
@@ -318,12 +311,13 @@ def make_slug(name: str, max_len: int = 48) -> str:
 
 def create_task(
     project_root: Path,
-    cfg: dict,
+    cfg: dict[str, object],
     name: str,
     body: str | None = None,
     status: str = "planning",
     creation_policy: str | None = None,
 ) -> Task:
+    """创建任务目录、memtrace.toml 与 TASK.md；strict 策略下存在活跃任务则拒绝。"""
     if status not in STATUSES:
         raise MemtraceError(f"status 必须是 {'/'.join(STATUSES)}")
     root_dir = config_mod.task_root_dir(project_root, cfg)
@@ -337,9 +331,7 @@ def create_task(
         active = [t for t in existing if t.status in open_statuses]
         if active:
             names = ", ".join(f"{t.dir.name}（{t.status}）" for t in active)
-            raise MemtraceError(
-                f"strict 模式：存在未关闭任务，先关闭或换 permissive。\n活跃任务：{names}"
-            )
+            raise MemtraceError(f"strict 模式：存在未关闭任务，先关闭或换 permissive。\n活跃任务：{names}")
 
     seq = _next_seq_for_date(root_dir, year, month, date)
     slug = make_slug(name)
@@ -365,7 +357,14 @@ def create_task(
     return Task(task_dir, meta)
 
 
-def update_status(project_root: Path, cfg: dict, task: Task, new_status: str, reason: str | None) -> Task:
+def update_status(
+    project_root: Path,
+    cfg: dict[str, object],
+    task: Task,
+    new_status: str,
+    reason: str | None,
+) -> Task:
+    """按 planning → open → closed 单向转换状态并回写元数据。"""
     if new_status not in STATUSES:
         raise MemtraceError(f"status 必须是 {'/'.join(STATUSES)}")
     if new_status == task.status:
@@ -394,7 +393,8 @@ def _atomic_write(path: Path, content: str) -> None:
     os.replace(tmp, path)
 
 
-def render_task_summary(task: Task, project_root: Path, cfg: dict) -> str:
+def render_task_summary(task: Task, project_root: Path, cfg: dict[str, object]) -> str:
+    """任务的人类可读摘要（目录名、id、状态、路径、依赖）。"""
     rel = task.relative(project_root)
     deps = task.meta.get("depends_on") or []
     lines = [

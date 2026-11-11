@@ -1,7 +1,5 @@
 """bootstrap 的文件同步、manifest 与项目内容合并。"""
 
-from __future__ import annotations
-
 import hashlib
 import json
 import os
@@ -10,7 +8,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import store
+from memtrace import store
 
 MANIFEST_NAME = "bootstrap-manifest.json"
 MANIFEST_SCHEMA_VERSION = 1
@@ -23,6 +21,8 @@ ADR_LIFECYCLES = {"proposal", "decision", "rejected", "archived"}
 
 @dataclass(frozen=True)
 class SourceFile:
+    """bootstrap 待同步的单个源文件：组件、来源、目标相对路径与内容摘要。"""
+
     component: str
     source: Path
     relative: str
@@ -30,6 +30,7 @@ class SourceFile:
 
 
 def read_version(root: Path) -> str:
+    """读主包版本号（template/agent-joshu/VERSION）。"""
     path = root / "template" / "agent-joshu" / "VERSION"
     try:
         version = path.read_text(encoding="utf-8").strip()
@@ -41,9 +42,10 @@ def read_version(root: Path) -> str:
 
 
 def collect_sources(root: Path, selected_skills: list[str]) -> list[SourceFile]:
+    """收集主包待同步文件（模板、memtrace、扩展与选中 Skill）。"""
     groups: list[tuple[str, Path, Path]] = [
         ("模板", root / "template" / "agent-joshu", Path("agent-joshu")),
-        ("memtrace", root / "memtrace", Path("agent-joshu") / "memtrace"),
+        ("memtrace", root / "src" / "memtrace", Path("agent-joshu") / "memtrace"),
         (
             "OMP 扩展",
             root / ".omp" / "extensions" / "memtrace",
@@ -51,8 +53,7 @@ def collect_sources(root: Path, selected_skills: list[str]) -> list[SourceFile]:
         ),
     ]
     groups.extend(
-        ("Skills", root / ".omp" / "skills" / name, Path(".omp") / "skills" / name)
-        for name in selected_skills
+        ("Skills", root / ".omp" / "skills" / name, Path(".omp") / "skills" / name) for name in selected_skills
     )
 
     files: list[SourceFile] = []
@@ -87,6 +88,7 @@ def sync_file(
     *,
     dry_run: bool,
 ) -> tuple[str, bool]:
+    """同步单个文件；返回（动作，是否写入），动作 ∈ added/updated/unchanged/conflict。"""
     destination = target / source.relative
     if not destination.exists():
         if not dry_run:
@@ -96,9 +98,7 @@ def sync_file(
         current_digest = file_digest(destination)
         if current_digest == source.digest:
             return "unchanged", False
-        if (
-            old_digest is not None and current_digest == old_digest
-        ) or (
+        if (old_digest is not None and current_digest == old_digest) or (
             old_digest is None and source.relative == "agent-joshu/VERSION"
         ):
             if not dry_run:
@@ -119,13 +119,12 @@ def merge_gitignore(
     git_policy: str,
     dry_run: bool,
 ) -> str:
+    """按 git_policy 合并 .memtrace/ 忽略规则到目标 .gitignore。"""
     destination = target / ".gitignore"
     current = destination.read_text(encoding="utf-8") if destination.is_file() else ""
     if git_policy == "track":
         active_lines = {
-            line.strip()
-            for line in current.splitlines()
-            if line.strip() and not line.lstrip().startswith("#")
+            line.strip() for line in current.splitlines() if line.strip() and not line.lstrip().startswith("#")
         }
         if GITIGNORE_MARKER in current or ".memtrace/" in active_lines:
             return "conflict-track"
@@ -147,6 +146,7 @@ def merge_gitignore(
 
 
 def merge_agents(root: Path, target: Path, version: str, *, dry_run: bool) -> str:
+    """把 agent-joshu 工作区规则块幂等追加到目标 AGENTS.md。"""
     rules = (root / "template" / "agents-rules.md").read_text(encoding="utf-8")
     destination = target / "AGENTS.md"
     if destination.is_file():
@@ -160,34 +160,29 @@ def merge_agents(root: Path, target: Path, version: str, *, dry_run: bool) -> st
     return "changed"
 
 
-def load_manifest(path: Path) -> dict:
+def load_manifest(path: Path) -> dict[str, object]:
+    """读目标项目 manifest；不存在返回空表，损坏则报错。"""
     if not path.is_file():
         return {}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise store.MemtraceError(
-            f"无法读取 agent-joshu/{MANIFEST_NAME}，请先修复该文件"
-        ) from exc
+        raise store.MemtraceError(f"无法读取 agent-joshu/{MANIFEST_NAME}，请先修复该文件") from exc
     if not isinstance(data, dict):
-        raise store.MemtraceError(
-            f"agent-joshu/{MANIFEST_NAME} 顶层必须是 JSON 对象"
-        )
+        raise store.MemtraceError(f"agent-joshu/{MANIFEST_NAME} 顶层必须是 JSON 对象")
     return data
 
 
-def manifest_files(manifest: dict) -> dict[str, str]:
+def manifest_files(manifest: dict[str, object]) -> dict[str, str]:
+    """从 manifest 提取相对路径 → 摘要映射。"""
     raw = manifest.get("files", {})
     if not isinstance(raw, dict):
         return {}
-    return {
-        str(path): str(digest)
-        for path, digest in raw.items()
-        if isinstance(path, str) and isinstance(digest, str)
-    }
+    return {str(path): str(digest) for path, digest in raw.items() if isinstance(path, str) and isinstance(digest, str)}
 
 
-def manifest_state(manifest: dict) -> dict:
+def manifest_state(manifest: dict[str, object]) -> dict[str, object]:
+    """manifest 的可比较状态快照（版本、Skill、文件摘要）。"""
     if not manifest:
         return {}
     skills = manifest.get("skills", [])
@@ -199,20 +194,26 @@ def manifest_state(manifest: dict) -> dict:
     }
 
 
-def dump_manifest(manifest: dict) -> str:
-    return json.dumps(
-        manifest,
-        ensure_ascii=False,
-        indent=2,
-        sort_keys=True,
-    ) + "\n"
+def dump_manifest(manifest: dict[str, object]) -> str:
+    """序列化 manifest 为稳定 JSON 文本（键排序、UTF-8、带尾换行）。"""
+    return (
+        json.dumps(
+            manifest,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n"
+    )
 
 
-def write_manifest(path: Path, manifest: dict) -> None:
+def write_manifest(path: Path, manifest: dict[str, object]) -> None:
+    """原子写入 manifest 文件。"""
     _atomic_write_bytes(path, dump_manifest(manifest).encode("utf-8"))
 
 
 def collect_project_owned(target: Path) -> list[str]:
+    """列出 bootstrap 不触碰的项目自有内容（ADR、reports、配置、任务过程）。"""
     paths: set[str] = set()
     agent_root = target / "agent-joshu"
     for lifecycle in sorted(ADR_LIFECYCLES):
@@ -234,6 +235,7 @@ def collect_project_owned(target: Path) -> list[str]:
 
 
 def file_digest(path: Path) -> str | None:
+    """文件内容 SHA-256 前 16 位；非普通文件返回 None。"""
     if not path.is_file():
         return None
     digest = hashlib.sha256()
@@ -244,11 +246,7 @@ def file_digest(path: Path) -> str | None:
 
 
 def _ignored_source(relative: Path) -> bool:
-    return (
-        "__pycache__" in relative.parts
-        or relative.suffix == ".pyc"
-        or relative.name.endswith(".tmp")
-    )
+    return "__pycache__" in relative.parts or relative.suffix == ".pyc" or relative.name.endswith(".tmp")
 
 
 def _project_owned_template_path(relative: Path) -> bool:

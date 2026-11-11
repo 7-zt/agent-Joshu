@@ -13,12 +13,12 @@
 
 ```bash
 # bash
-PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>
+PYTHONPATH=src python -m memtrace bootstrap <目标项目路径>
 ```
 
 ```powershell
 # PowerShell
-$env:PYTHONPATH="."; python -m memtrace bootstrap <目标项目路径>
+$env:PYTHONPATH="src"; python -m memtrace bootstrap <目标项目路径>
 ```
 
 bootstrap 做的事（纯本地复制，零网络）：

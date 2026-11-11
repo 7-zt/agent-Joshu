@@ -28,12 +28,12 @@ function findProjectRoot(startDir: string): string | null {
    return null;
 }
 
-// 主包仓库位置 = 本扩展文件向上三级（.omp/extensions/memtrace/ → 仓库根）。
+// 主包 src 布局：memtrace 包位于 <仓库根>/src，作为 PYTHONPATH 根。
 // Windows/Linux 通用；避免依赖 OMP 配置里的绝对路径。
 function defaultKitRoot(): string {
    // fileURLToPath 处理 Windows 的 file:///C:/...，避免把 /C:/ 当成本地路径。
    const file = fileURLToPath(import.meta.url);
-   return dirname(dirname(dirname(file)));
+   return join(dirname(dirname(dirname(file))), "src");
 }
 
 function resolveKitRoot(projectRoot: string): string {

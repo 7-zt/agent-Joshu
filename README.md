@@ -53,7 +53,7 @@
 ├── THIRD_PARTY_NOTICES.md 第三方来源与许可声明
 ├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
 ├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
-├── memtrace/            memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
+├── src/memtrace/        memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
 ├── omp/                 prompts/（可复用模式索引 + 独立 prompt）

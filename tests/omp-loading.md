@@ -48,12 +48,12 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 
 ## 第 5 步：memtrace CLI 与扩展
 
-- CLI：在主包仓库根执行 `PYTHONPATH=. python -m memtrace --version`（bash）应输出 `memtrace 1.0.0`；`python -m memtrace read --list` 在未 init 的目录报「未找到 memtrace 项目」属正常。
+- CLI：在主包仓库根执行 `PYTHONPATH=src python -m memtrace --version`（bash）应输出 `memtrace 1.0.0`；`python -m memtrace read --list` 在未 init 的目录报「未找到 memtrace 项目」属正常。
 - 扩展：主包仓库根开新 OMP 会话，应出现「memtrace 任务记录已加载」提示；`.memtrace/` 存在任务时会话首条注入 `<memtrace-context>` 当前任务与最近 WAL 摘要。
 
 ## 新项目附加检查（bootstrap 安装后执行）
 
-在主包仓库根执行 `PYTHONPATH=. python -m memtrace bootstrap <目标项目路径>` 后，逐项核对：
+在主包仓库根执行 `PYTHONPATH=src python -m memtrace bootstrap <目标项目路径>` 后，逐项核对：
 
 1. **清单核对**：项目内存在 `agent-joshu/`（含 `memtrace/` 包、`VERSION`、`bootstrap-manifest.json`、`adr/` 骨架）、`.omp/skills/` 下 9 个 Skill 目录、`.omp/extensions/memtrace/`（index.ts）、`.agents/memtrace_config.toml`、`.memtrace/`。
 2. **git 状态**（有 git 仓库时检查；无 git 项目跳过本项，属完全支持场景）：项目根 `git status` 只见 `agent-joshu/`、`.omp/`、`.agents/`、`AGENTS.md` 与 `.gitignore`；`.memtrace/` 被忽略（过程本地化生效）。
@@ -80,7 +80,7 @@ inference-ops、grill-me、architect、python-engineering、code-quality、deep-
 2. SKILL.md 的 frontmatter 格式是否正确
 3. `agents/openai.yaml` 是否存在且格式正确
 4. OMP 版本是否支持项目级 `.omp/` 自动发现
-5. memtrace 报「未找到项目」：项目根执行 `PYTHONPATH=<主包根> python -m memtrace init`
+5. memtrace 报「未找到项目」：项目根执行 `PYTHONPATH=<主包根>/src python -m memtrace init`
 6. memtrace 扩展无提示：确认 OMP 加载项目 `.omp/extensions/`，且会话 cwd 在含 `.memtrace/` 的项目内
 
 ## 注意

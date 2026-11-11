@@ -12,19 +12,28 @@
 验证（跑了什么+结果）、用户纠正。
 """
 
-from __future__ import annotations
-
 from pathlib import Path
+from typing import TypedDict
 
-from .store import WAL_SEMANTIC_SECTIONS
-from .timeutil import rfc3339_now, today_local
+from memtrace.store import WAL_SEMANTIC_SECTIONS
+from memtrace.timeutil import rfc3339_now, today_local
+
+
+class WalEntry(TypedDict):
+    """单条 WAL 条目：时间戳、记录者与正文。"""
+
+    timestamp: str
+    actor: str
+    raw: str
 
 
 def wal_dir(task_dir: Path) -> Path:
+    """任务目录下的 wal/ 子目录。"""
     return task_dir / "wal"
 
 
 def wal_path(task_dir: Path, date: str | None = None) -> Path:
+    """指定日期的 WAL 文件路径（缺省当天）。"""
     return wal_dir(task_dir) / f"{date or today_local()}.md"
 
 
@@ -59,6 +68,7 @@ def append_entry(
 
 
 def read_wal(task_dir: Path, date: str | None = None) -> str:
+    """读指定日期的 WAL 全文；文件不存在返回空串。"""
     path = wal_path(task_dir, date)
     if not path.is_file():
         return ""
@@ -66,6 +76,7 @@ def read_wal(task_dir: Path, date: str | None = None) -> str:
 
 
 def list_wal_files(task_dir: Path) -> list[Path]:
+    """按文件名列出任务的全部 WAL 文件。"""
     directory = wal_dir(task_dir)
     if not directory.is_dir():
         return []
@@ -88,13 +99,13 @@ def recent_wal(task_dir: Path, max_entries: int = 5) -> str:
 _ENTRY_RE_PREFIX = "## "
 
 
-def parse_all_entries(task_dir: Path) -> list[dict]:
+def parse_all_entries(task_dir: Path) -> list[WalEntry]:
     """解析全部 WAL 文件为条目列表（timestamp/actor/raw 正文）。"""
-    entries: list[dict] = []
+    entries: list[WalEntry] = []
     for path in list_wal_files(task_dir):
         text = path.read_text(encoding="utf-8")
         lines = text.splitlines()
-        current: dict | None = None
+        current: WalEntry | None = None
         body_lines: list[str] = []
         for line in lines:
             if line.startswith(_ENTRY_RE_PREFIX) and " · " in line:
@@ -113,8 +124,12 @@ def parse_all_entries(task_dir: Path) -> list[dict]:
     return entries
 
 
-def semantic_body(changes: str | None = None, reversals: str | None = None,
-                  verification: str | None = None, user_correction: str | None = None) -> str:
+def semantic_body(
+    changes: str | None = None,
+    reversals: str | None = None,
+    verification: str | None = None,
+    user_correction: str | None = None,
+) -> str:
     """按语义小节拼正文；只输出给了内容的小节。"""
     sections = [
         ("变更", changes),
@@ -127,4 +142,5 @@ def semantic_body(changes: str | None = None, reversals: str | None = None,
 
 
 def semantic_section_titles() -> tuple[str, ...]:
+    """WAL 语义小节标题（供注入与解析对齐）。"""
     return WAL_SEMANTIC_SECTIONS

@@ -3,14 +3,13 @@
 48 位 Unix 毫秒时间戳 + 12 位随机 a_ver + 2 位变体 + 62 位随机。
 """
 
-from __future__ import annotations
-
 import os
 import time
 import uuid
 
 
 def uuid7() -> str:
+    """生成 UUIDv7 字符串（48 位毫秒时间戳 + 随机位，RFC 9562）。"""
     ms = time.time_ns() // 1_000_000
     rand_a = int.from_bytes(os.urandom(2), "big") & 0x0FFF
     rand_b = int.from_bytes(os.urandom(8), "big") & 0x3FFFFFFFFFFFFFFF

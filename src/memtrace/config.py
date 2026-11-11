@@ -4,8 +4,6 @@
 task_root 默认 .memtrace。
 """
 
-from __future__ import annotations
-
 import os
 from pathlib import Path
 
@@ -35,9 +33,9 @@ def _parse_scalar(raw: str) -> object:
         return value
 
 
-def _parse_toml_subset(text: str) -> dict:
+def _parse_toml_subset(text: str) -> dict[str, object]:
     """解析顶层键值 TOML 子集。表头（[section]）忽略——v1 无表段配置。"""
-    data: dict = {}
+    data: dict[str, object] = {}
     for raw_line in text.lstrip("\ufeff").splitlines():
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -68,10 +66,11 @@ def _parse_toml_subset(text: str) -> dict:
 
 
 def config_path(project_root: Path) -> Path:
+    """配置文件路径：项目根下的 .agents/memtrace_config.toml。"""
     return project_root / CONFIG_DIR / CONFIG_NAME
 
 
-def load_config(project_root: Path) -> dict:
+def load_config(project_root: Path) -> dict[str, object]:
     """读取配置；文件不存在时返回全默认值（不报错，命令自行判断未 init）。"""
     defaults = {
         "task_root": DEFAULT_TASK_ROOT,
@@ -95,14 +94,15 @@ def write_config(project_root: Path) -> Path:
     body = (
         "# memtrace 项目配置（稀疏 TOML；未写的键走默认值）\n"
         f'task_root = "{DEFAULT_TASK_ROOT}"\n'
-        "# creation_policy = \"strict\"   # strict | permissive\n"
-        "# git_policy = \"ignore\"        # track | ignore | none\n"
+        '# creation_policy = "strict"   # strict | permissive\n'
+        '# git_policy = "ignore"        # track | ignore | none\n'
     )
     _atomic_write(path, body)
     return path
 
 
-def task_root_dir(project_root: Path, config: dict | None = None) -> Path:
+def task_root_dir(project_root: Path, config: dict[str, object] | None = None) -> Path:
+    """任务根目录：配置 task_root 覆盖默认 .memtrace，绝对路径原样使用。"""
     cfg = config if config is not None else load_config(project_root)
     root = str(cfg.get("task_root", DEFAULT_TASK_ROOT))
     if os.path.isabs(root):
@@ -110,7 +110,8 @@ def task_root_dir(project_root: Path, config: dict | None = None) -> Path:
     return project_root / root
 
 
-def validate_config(config: dict) -> list[str]:
+def validate_config(config: dict[str, object]) -> list[str]:
+    """校验配置取值，返回错误消息列表（空列表即通过）。"""
     errors = []
     if config.get("creation_policy") not in _VALID_CREATION:
         errors.append(f"creation_policy 必须是 {'/'.join(sorted(_VALID_CREATION))}")
