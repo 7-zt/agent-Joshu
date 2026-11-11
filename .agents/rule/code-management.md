@@ -35,6 +35,14 @@
 
 `amend` 只允许修改提交信息，不允许补充或替换已提交的文件。需要修正内容时新增提交，最终用 squash merge 收敛。
 
+## 检查
+
+开发完成后的第一动作是 `git commit`，让 pre-commit 和 commit-msg hooks 执行完整检查。不要先用 `make check` 或零散检查替代 hooks。
+
+hook 报具体错误时，才运行 `make check USE_COLORS=0` 或更小范围命令定位。hook 自动修复 `end-of-file-fixer`、`trailing-whitespace`、`ruff check --fix`、`ruff format` 后，确认变更属于当前任务，重新 `git add` 和 `git commit`。
+
+依赖变更使用 `uv add`、`uv remove` 和 `uv lock`。禁止手工编辑 `uv.lock`。
+
 ## 合并
 
 任务分支合并到 `main` 使用 squash merge，合并后删除任务分支，本地和远端都删除。即使可以 fast-forward，也不改用普通 merge 或 rebase。

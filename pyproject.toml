@@ -1,0 +1,24 @@
+[project]
+name = "agent-joshu"
+version = "1.0.0"
+description = "个人 AI 工作流主包：Skill 能力层 + memtrace 任务过程记录 + 项目 bootstrap 部署"
+requires-python = ">=3.10"
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "gitlint-core==0.19.1",
+    "pre-commit",
+    "pre-commit-hooks",
+    "pytest",
+    "ruff>=0.16.2",
+    "ty",
+]
+
+[tool.ruff]
+src = ["src"]
+line-length = 120
+target-version = "py310"
+extend-exclude = ["**/*.md"]

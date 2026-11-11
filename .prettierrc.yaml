@@ -1,0 +1,10 @@
+proseWrap: preserve
+printWidth: 120
+tabWidth: 2
+useTabs: false
+endOfLine: lf
+embeddedLanguageFormatting: off
+overrides:
+  - files: "**/*.md"
+    options:
+      tabWidth: 4

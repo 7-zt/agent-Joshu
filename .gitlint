@@ -1,0 +1,10 @@
+[general]
+ignore=T1,T2,T3,T4,T5,T6,T8,B1,B2,B3,B5,M1
+
+[title-match-regex]
+regex=^[a-z][a-z0-9]*\((agents|api|build|config|core|docs|lib|repo|test)\)!?: \S.*$
+
+[body-is-missing]
+
+[body-match-regex]
+regex=^(?![\s\S]*\\n- )(?:- .+(?:\n|$))+(?:\n(?:(?:BREAKING CHANGE|[A-Za-z][A-Za-z0-9-]*): .+(?:\n|$))+)?$

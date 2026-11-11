@@ -54,10 +54,10 @@ fixture 提供可复用的基础对象，例如默认上下文、默认配置、
 
 ## 检查
 
-需要单独复现时使用：
+提交前由 `git commit` hooks 运行 pytest。需要单独复现时使用：
 
 ```bash
-python -m pytest tests/ -q
+uv run --no-sync pytest -q
 ```
 
 测试失败时先确认断言是否绑定实现细节。测试依赖未确认的内部行为时，按外部行为调整测试，不改变对外行为来迁就测试。

@@ -54,6 +54,9 @@
 ├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
 ├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
 ├── src/memtrace/        memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
+├── Makefile             开发检查链入口（make check / make check-docs）
+├── pyproject.toml       开发依赖组与 ruff 配置（uv 管理；memtrace 运行时零依赖不变）
+├── uv.lock              开发依赖锁定
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
 ├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
@@ -64,17 +67,17 @@
 
 ## Skill 库
 
-| Skill | 触发 | 说明 |
-| --- | --- | --- |
-| inference-ops | 用户显式 | 推理运维：部署排障 × 性能优化（3 模式 + 10 篇方法论文档 + 知识库协议） |
-| grill-me | 用户显式 | 需求盘问：把不完整想法/计划盘成可执行规格 |
-| architect | 自动 | 架构：系统分析、设计、评审、技术选型 |
-| python-engineering | 自动 | Python 工程实践：结构/依赖/类型/测试/工具链 |
-| code-quality | 自动 | 代码质量：原则、模式、重构、测试设计 |
-| deep-research | 自动 | 深度调研：来源采集、交叉验证、论断边界 |
-| unslop | 自动 | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」） |
-| memtrace | 自动 | 任务过程记录：create/log/read/search/update，阶段性 WAL（变更/推翻/验证/用户纠正） |
-| summarizer | 用户显式 | 会话蒸馏 Q&A：扫描本项目 omp/claude/codex 会话，知识性问答按时间追加进项目根 QA.md |
+| Skill              | 触发     | 说明                                                                               |
+| ------------------ | -------- | ---------------------------------------------------------------------------------- |
+| inference-ops      | 用户显式 | 推理运维：部署排障 × 性能优化（3 模式 + 10 篇方法论文档 + 知识库协议）             |
+| grill-me           | 用户显式 | 需求盘问：把不完整想法/计划盘成可执行规格                                          |
+| architect          | 自动     | 架构：系统分析、设计、评审、技术选型                                               |
+| python-engineering | 自动     | Python 工程实践：结构/依赖/类型/测试/工具链                                        |
+| code-quality       | 自动     | 代码质量：原则、模式、重构、测试设计                                               |
+| deep-research      | 自动     | 深度调研：来源采集、交叉验证、论断边界                                             |
+| unslop             | 自动     | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」）                             |
+| memtrace           | 自动     | 任务过程记录：create/log/read/search/update，阶段性 WAL（变更/推翻/验证/用户纠正） |
+| summarizer         | 用户显式 | 会话蒸馏 Q&A：扫描本项目 omp/claude/codex 会话，知识性问答按时间追加进项目根 QA.md |
 
 ## 多代理闭环（herdr 可用时）
 

@@ -396,7 +396,8 @@ def _atomic_write(path: Path, content: str) -> None:
 def render_task_summary(task: Task, project_root: Path, cfg: dict[str, object]) -> str:
     """任务的人类可读摘要（目录名、id、状态、路径、依赖）。"""
     rel = task.relative(project_root)
-    deps = task.meta.get("depends_on") or []
+    depends_on = task.meta.get("depends_on")
+    deps = depends_on if isinstance(depends_on, list) else []
     lines = [
         f"{task.dir.name}",
         f"  id: {task.id}",
