@@ -89,4 +89,4 @@
 
 ## 检查
 
-提交前运行 `make check-docs USE_COLORS=0`，该目标只检查 Git 已跟踪的 Markdown，排除 `servio/`，新增文件需要先 `git add`。
+提交前运行 `make check-docs USE_COLORS=0`，该目标只检查 Git 已跟踪的 Markdown，排除 `.agents/` 与 `.omp/`，新增文件需要先 `git add`。
