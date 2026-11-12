@@ -43,23 +43,24 @@
 
 涉及依赖安装、环境修改、容器重建、服务重启或生产变更时，本项目只提供分级和检查方法，实际操作仍需要明确授权。
 
-推理优化 × 部署排障方向的个人 Agent Kit。**主包一份克隆，项目一条命令。** 核心理念：证据优先、事实与推断分离、版本敏感断言必须可审计、跨设备零路径耦合。
+把这套工作包装进任意项目只需一条命令，安装与更新步骤见 [template/README.md](./template/README.md)。
 
 ## 目录
 
-```
+```text
 ├── README.md            本文件
 ├── LICENSE              本项目 MIT License
 ├── THIRD_PARTY_NOTICES.md 第三方来源与许可声明
 ├── AGENTS.md            主包工作区规则（架构、Skill 路由、证据纪律、授权分级、存储约定）
 ├── .agents/adr/         架构决定记录（proposal/decision/archived/rejected 生命周期 + 术语表）
+├── .agents/rule/        工作规则（代码管理、测试、Python 风格、项目结构、工程取舍、文档撰写）
 ├── src/memtrace/        memtrace Python 包（任务过程记录 CLI + bootstrap 部署子命令，零第三方依赖）
 ├── Makefile             开发检查链入口（make check / make check-docs）
 ├── pyproject.toml       开发依赖组与 ruff 配置（uv 管理；memtrace 运行时零依赖不变）
 ├── uv.lock              开发依赖锁定
 ├── template/            项目上下文模板（agent-joshu/ 目录源 + agents-rules.md + 安装说明 + 版本标记）
 ├── reports/             主包自托管工作的问题报告（YYYY-MM-DD-NN-theme.md，事实-only）
-├── tests/               逐 Skill 触发矩阵（omp-loading.md）与场景回归卡（scenarios.md）
+├── tests/               memtrace 行为测试与 bootstrap 回归（pytest）；Skill 触发矩阵与场景回归卡（omp-loading.md、scenarios.md）
 ├── .memtrace/           任务过程（memtrace 数据，本地，不进 git）
 ├── .memtrace-archive/   旧任务只读归档（本地，不进 git）
 └── .omp/                skills/（9 个 Skill，OMP 项目级自动发现）+ extensions/memtrace/
@@ -67,21 +68,24 @@
 
 ## Skill 库
 
-| Skill              | 触发     | 说明                                                                               |
-| ------------------ | -------- | ---------------------------------------------------------------------------------- |
-| inference-ops      | 用户显式 | 推理运维：部署排障 × 性能优化（3 模式 + 10 篇方法论文档 + 知识库协议）             |
-| grill-me           | 用户显式 | 需求盘问：把不完整想法/计划盘成可执行规格                                          |
-| architect          | 自动     | 架构：系统分析、设计、评审、技术选型                                               |
-| python-engineering | 自动     | Python 工程实践：结构/依赖/类型/测试/工具链                                        |
-| code-quality       | 自动     | 代码质量：原则、模式、重构、测试设计                                               |
-| deep-research      | 自动     | 深度调研：来源采集、交叉验证、论断边界                                             |
-| unslop             | 自动     | 去除文本 AI 痕迹、换回人话（上游声明「必须始终应用」）                             |
-| memtrace           | 自动     | 任务过程记录：create/log/read/search/update，阶段性 WAL（变更/推翻/验证/用户纠正） |
-| summarizer         | 用户显式 | 会话蒸馏 Q&A：扫描本项目 omp/claude/codex 会话，知识性问答按时间追加进项目根 QA.md |
+用户显式触发：
+
+- inference-ops：推理运维，部署排障与性能优化，含模式化工作流、方法论文档与知识库协议。
+- grill-me：需求盘问，把不完整的想法和计划盘成可执行规格。
+- summarizer：会话蒸馏问答，扫描本项目 omp、claude、codex 会话，知识性问答按时间追加进项目根 QA.md。
+
+其余按对话信号自动加载：
+
+- architect：架构分析、设计、评审与技术选型。
+- python-engineering：Python 工程实践，覆盖结构、依赖、类型、测试与工具链。
+- code-quality：代码质量，覆盖原则、模式、重构与测试设计。
+- deep-research：深度调研，来源采集、交叉验证与论断边界。
+- unslop：改写面向用户的文本，去除 AI 痕迹、换回人话；上游要求始终应用。
+- memtrace：任务过程记录，create、log、read、search、update 子命令与阶段性 WAL（变更、推翻、验证、用户纠正）。
 
 ## 多代理闭环（herdr 可用时）
 
-```
+```text
 用户需求
   → claude（study:p2）：按 Skill 设计方案/报告
   → codex（study:p3）：独立验证（只读，PASS/FAIL + 证据 + 必须修正项）
@@ -90,15 +94,14 @@
 ```
 
 - 前置探测：`test "$HERDR_ENV" = 1`；herdr 不可用时单代理照常。
-- 设计稿与验证报告分别落盘（各自独立成文件），验证只读不改。
-- 本工作区即由该闭环构建：01 总结(omp) → 03 设计(claude) → 04 验证(codex) → 落地(omp)。
+- 设计稿与验证报告分别落盘，各自独立成文件；验证只读不改。
 
 ## 维护
 
 - 知识条目（`inference-ops` 的 `references/knowledge/`）按需生成（一场景一条目），引擎大版本发布后标 `needs-review` 复核。
 - 报告解决后从 `reports/` 删除或移入对应任务材料。
-- 新的长期边界决定按 `.agents/adr/README.md` 的生命周期入 ADR 目录；场景回归用 `tests/scenarios.md`。
-- `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目重跑 `bootstrap` 比对更新（见 `template/README.md`「更新」节）。
+- 新的长期边界决定按 [.agents/adr/README.md](./.agents/adr/README.md) 的生命周期入 ADR 目录；场景回归用 [tests/scenarios.md](./tests/scenarios.md)。
+- `template/` 内容变更时同步更新 `template/agent-joshu/VERSION`；已安装项目重跑 `bootstrap` 比对更新（见 [template/README.md](./template/README.md)「更新」节）。
 
 ## 来源与致谢
 
