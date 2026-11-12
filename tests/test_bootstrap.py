@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from memtrace import cli as cli_mod
 from memtrace import config, store
+from memtrace.bootstrap import available_skills
 from memtrace.cli import main
 
 
@@ -29,6 +30,7 @@ class BootstrapTests(unittest.TestCase):
             self.assertIn("bootstrap 完成", output)
             self.assertTrue((target / "agent-joshu" / "memtrace" / "__init__.py").is_file())
             self.assertTrue((target / ".omp" / "extensions" / "memtrace" / "index.ts").is_file())
+            self.assertTrue((target / "agent-joshu" / "adr" / "glossary.md").is_file())
             self.assertEqual(
                 len(list((target / ".omp" / "skills").iterdir())),
                 9,
@@ -264,6 +266,23 @@ class BootstrapTests(unittest.TestCase):
     @staticmethod
     def snapshot(root: Path) -> dict[str, bytes]:
         return {path.relative_to(root).as_posix(): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+
+
+class KitSourcesTests(unittest.TestCase):
+    """主包 kit 分发源之间的一致性。"""
+
+    def test_agents_rules_table_matches_skills(self) -> None:
+        """项目规则块的 Skill 表应与 .omp/skills/ 实际清单一致，防止增删 Skill 后漏改分发规则。"""
+        root = Path(__file__).resolve().parents[1]
+        rules = (root / "template" / "agents-rules.md").read_text(encoding="utf-8")
+        listed = set()
+        for line in rules.splitlines():
+            if not line.startswith("|"):
+                continue
+            first = line.split("|")[1].strip()
+            if first and first != "Skill" and not set(first) <= {"-"}:
+                listed.add(first)
+        self.assertEqual(listed, set(available_skills(root)))
 
 
 class FindTaskTests(unittest.TestCase):
