@@ -42,7 +42,11 @@ def read_version(root: Path) -> str:
 
 
 def collect_sources(root: Path, selected_skills: list[str]) -> list[SourceFile]:
-    """收集主包待同步文件（模板、memtrace、扩展与选中 Skill）。"""
+    """收集主包待同步文件（模板、memtrace、扩展与选中 Skill）。
+
+    ADR 术语表以主包 .agents/adr/glossary.md 为单源，映射为项目的
+    agent-joshu/adr/glossary.md 分发；模板目录不保留副本。
+    """
     groups: list[tuple[str, Path, Path]] = [
         ("模板", root / "template" / "agent-joshu", Path("agent-joshu")),
         ("memtrace", root / "src" / "memtrace", Path("agent-joshu") / "memtrace"),
@@ -78,6 +82,18 @@ def collect_sources(root: Path, selected_skills: list[str]) -> list[SourceFile]:
                     digest=digest,
                 )
             )
+    glossary = root / ".agents" / "adr" / "glossary.md"
+    glossary_digest = file_digest(glossary)
+    if glossary_digest is None:
+        raise store.MemtraceError("主包 .agents/adr/glossary.md 缺失或不可读（术语表分发源）")
+    files.append(
+        SourceFile(
+            component="模板",
+            source=glossary,
+            relative="agent-joshu/adr/glossary.md",
+            digest=glossary_digest,
+        )
+    )
     return sorted(files, key=lambda item: item.relative)
 
 
