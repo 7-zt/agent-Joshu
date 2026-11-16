@@ -45,7 +45,7 @@ agent-Joshu/
 - 新建 Skill 放 `.omp/skills/<name>/`，必须有 `SKILL.md`；目录名与 frontmatter 用英文，正文用中文，自 ruokee-agent-kit 移植的五个 Skill 与 `unslop` 保留英文正文。组件自包含硬规则见 `AGENTS.md`。
 - Skill 的附属脚本放该 Skill 自己的 `scripts/`（先例：`summarizer`）。
 - OMP 扩展只放 `.omp/extensions/memtrace/`，主包与项目侧共用同一源文件，由 bootstrap 复制分发，不维护第二份。
-- 项目侧上下文骨架改 `template/agent-joshu/`；并入项目根 `AGENTS.md` 的区块源是 `template/agents-rules.md`；`.gitignore` 追加项在 `template/gitignore.additions`。
+- 项目侧上下文骨架改 `template/agent-joshu/`；ADR 术语表单源于 `.agents/adr/glossary.md`，由 bootstrap 映射分发，模板不留副本；并入项目根 `AGENTS.md` 的区块源是 `template/agents-rules.md`；`.gitignore` 追加项在 `template/gitignore.additions`。
 - 工作规则改 `.agents/rule/`，长期决定走 `.agents/adr/`，问题报告写 `reports/`。
 
 ## 依赖边界

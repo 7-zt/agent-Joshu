@@ -23,6 +23,7 @@ ADR 根目录为 `.agents/adr`：
 
 - `proposal/` 生效提案；`rejected/` 被拒提案；`decision/` 现行决定；`archived/` 归档决定。目录同时表达类型与状态，文件内不写 Status 字段。
 - 文件名日期为首次提案日期，移动不改。英文短 slug；完整文件名（含日期与扩展名）不超过 60 字符。
+- 项目侧同构版本：[template/agent-joshu/adr/README.md](../../template/agent-joshu/adr/README.md)（bootstrap 分发源，项目内路径为 `agent-joshu/adr/`）；修订生命周期规则时同步评估两侧。
 - 四个生命周期目录始终保留在 git 中（含 `.gitkeep`）。
 
 动作用短语：「创建决定」「更新决定」「反向决定」。反向决定新建完整的决定并在头部加 `反向决定：<旧决定文件>`；旧决定头部加 `被反向决定：<新决定文件>` 后移入 `archived/`。
